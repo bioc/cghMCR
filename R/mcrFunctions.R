@@ -1,0 +1,327 @@
+# Functions that support the cghMCR class
+#
+# Copyright 2006, J. Zhang, all rights reserved
+#
+
+# Gets the MCRs based on the segmentation data contained by segList.
+# segList is a data frame extracted from the output of DNAcopy
+getMCR <- function(segList, overlap = 0, ampLimit, delLimit){
+  
+  getMCR4Locus <- function(loc.pos, chromosome){
+    if(loc.pos["status"] == "gain"){
+      segInLoc <- segList[as.character(segList[, "chrom"]) ==
+                          as.character(chromosome) & as.numeric(
+                          segList[, "loc.start"]) >= as.numeric(
+                          loc.pos["loc.start"]) & as.numeric(
+                          segList[, "loc.end"]) <= as.numeric(
+                          loc.pos["loc.end"]) & as.numeric(
+                          segList[, "seg.mean"]) >= 0,
+                          , drop = FALSE]
+    }else{
+      segInLoc <- segList[as.character(segList[, "chrom"]) ==
+                          as.character(chromosome) & as.numeric(
+                          segList[, "loc.start"]) >= as.numeric(
+                          loc.pos["loc.start"]) & as.numeric(
+                          segList[, "loc.end"]) <= as.numeric(
+                          loc.pos["loc.end"]) & as.numeric(
+                          segList[, "seg.mean"]) < 0,
+                          , drop = FALSE]
+    }
+    if(nrow(segInLoc) > 0){
+      mcrByLocus <- findMCR(segInLoc)
+      mcrs <<- rbind(mcrs, cbind(chromosome, loc.pos["locus"],
+                                 loc.pos["status"], loc.pos["loc.start"],
+                                 loc.pos["loc.end"], mcrByLocus))
+    }
+  }
+  if(!missing(ampLimit)){
+    segList <- segList[as.numeric(segList[, "seg.mean"]) < 0 |
+                       as.numeric(segList[, "seg.mean"]) >= ampLimit,
+                       , drop = FALSE]
+  }
+  if(!missing(delLimit)){
+    segList <- segList[as.numeric(segList[, "seg.mean"]) > 0 |
+                       as.numeric(segList[, "seg.mean"]) <= delLimit,
+                       , drop = FALSE]
+  }
+  mcrs <- NULL
+  temp <- split.data.frame(segList, factor(segList[, "chrom"]))
+  locus <- lapply(temp, getLocus, overlap = overlap)
+  for(chrom in names(locus)){
+    locusByChrom <- locus[[chrom]]
+    junk <- apply(locusByChrom, 1, getMCR4Locus, chromosome = chrom) 
+  }
+  colnames(mcrs) <- c("chromosome", "locus", "status", "loc.start",
+                      "loc.end", "mcr", "mcr.start", "mcr.end", "samples")
+  rownames(mcrs) <- mcrs[, 1]
+  
+  return(mcrs)
+}
+
+# Takes the segment data for a givan chromosome and returns a data from
+# defining the loci identified. Segments are considered to belong to the
+# same locus unless they overlap by the number of bases specified by
+# variable 'overlap'.
+getLocus <- function(segData, overlap = 500){
+  locus <- NULL
+  listBySign <- list(gain = segData[segData[, "seg.mean"] >= 0,,
+                     drop = FALSE], loss = segData[segData[, "seg.mean"] < 0,
+                                      , drop = FALSE])
+  for(name in names(listBySign)){
+    if(nrow(listBySign[[name]]) > 0){
+      locus <- rbind(locus, cbind(findLocus(listBySign[[name]],
+                                 overlap = overlap), status = name))
+    }
+  }
+  return(locus)
+}
+
+findLocus <- function(segData, overlap = 500){
+  locus <- NULL
+  
+  begin <- min(segData[, "loc.start"])
+  end <- max(segData[segData[, "loc.start"] == begin, "loc.end"])
+  if(end >= max(segData[, "loc.end"])){
+    locus <- rbind(locus, c("locus.1", begin, end))
+  }else{
+    locusCounter <- 1
+    while(TRUE){
+      # Subsetting segments that overlap with the locus currently defined
+      tempData <- segData[segData[, "loc.start"] != begin, , drop = FALSE]
+      tempData <- tempData[tempData[, "loc.end"] > end &
+                        tempData[, "loc.start"] - overlap <=  end,
+                       , drop = FALSE]
+      if(nrow(tempData) < 1){
+        # Segments break, define one locus
+        locus <- rbind(locus, c(paste("locus.", locusCounter, sep = ""),
+                                    begin, end))
+        locusCounter <- locusCounter + 1
+        # Drop the ones have been processed
+        segData <- segData[segData[, "loc.start"] - overlap > end, ,
+                           drop = FALSE]
+        if(nrow(segData) < 1){
+          break
+        }else{
+          # Define the begining of another locus
+          begin <- min(segData[, "loc.start"])
+          end <- max(segData[segData[, "loc.start"] == begin, "loc.end"])
+        }
+      }else{
+        end <- max(tempData[, "loc.end"])
+        # End of the data
+        if(end >= max(segData[, "loc.end"])){
+          locus <- rbind(locus, c(paste("locus.", locusCounter, sep = ""),
+                                  begin, end))
+          break
+        }
+      }
+    }
+  }
+  colnames(locus) <- c("locus", "loc.start", "loc.end")
+  return(locus)
+}
+
+
+# Takes the segment data for a given locus and returns the MCRs located
+# by mapping the data to the potential MCRs identified by getPotentialMCR
+findMCR <- function(segData){
+  mcrs <- NULL
+  if(nrow(segData) == 1){
+    mcrs <- matrix(c("mcr.1", segData[, "loc.start"], segData[, "loc.end"],
+              segData[, "ID"]), ncol = 4)
+  }else{
+    mcrCounter <- 1
+    pMCRs <- getPotentialMCR(segData)
+    for(index in 1:nrow(pMCRs)){
+      segs <- segData[as.numeric(segData[, "loc.start"])
+                      <= as.numeric(pMCRs[index, "mcr.start"]) &
+                      as.numeric(segData[, "loc.end"])
+                      >= as.numeric(pMCRs[index, "mcr.end"]), "ID"]
+      if(length(segs) > 0){
+        mcrs <- rbind(mcrs, c(paste("mcr", mcrCounter, sep = "."),
+                              pMCRs[index, "mcr.start"],
+                              pMCRs[index, "mcr.end"],
+                              paste(unique(segs), sep = "", collapse = ",")))
+        mcrCounter <- mcrCounter + 1
+      }
+    }
+  }
+  colnames(mcrs) <- c("mcr.num", "mcr.start", "mcr.end", "samples")
+
+  return(mcrs)
+}
+
+
+# Locate all the potential MCRs by aligning the starting and ending points
+# of all the segments from all the samples. The region between any two
+# adjacent points will be a potential MCR
+getPotentialMCR <- function(segData){
+  temp <- sort(unique(as.numeric(c(segData[, "loc.start"],
+                                   segData[, "loc.end"]))))
+  mcrs <- cbind(temp[1:(length(temp) - 1)], temp[2:length(temp)])
+  colnames(mcrs) <- c("mcr.start", "mcr.end")
+
+  return(mcrs)
+}
+
+
+mergeMCRProbes <- function(mcr, rawData){
+  temp <- apply(mcr, 1, FUN = function(x){
+    probes <- rawData[rawData[, 2] == x[1] & as.numeric(rawData[, 3])
+                        >= as.numeric(x[7]) & as.numeric(rawData[, 3])
+                        <= as.numeric(x[8]), 1]
+    if(length(probes) == 0){
+      return(NA)
+    }else{
+      return(paste(probes, sep = "", collapse = ","))
+    }                   
+  })
+
+  mcr <- cbind(mcr, probes = temp)
+  return(mcr)
+}
+
+
+plot.DNAcopy <- function(x, ...){
+  args <- list(...)
+  sampleNames <- unique(x[["output"]][, "ID"])
+  locations <- cghMCR:::alignGenes(x[["data"]][, c("chrom", "maploc")])
+  adjustments <- cghMCR:::getAdjustments(x[["data"]][, c("chrom", "maploc")])
+  segdata <- cghMCR:::adjustSegments(x[["output"]], adjustments)
+  if(!is.null(args[["save"]]) && args[["save"]]){
+    tempPng <- file.path(tempdir(), "segments.png")
+    png(filename = tempPng)
+  }
+  par(mfrow = c(length(sampleNames), 1))
+  for(sampleName in sampleNames){
+    plot(0, 0, cex = 0, main = sampleName, xlab = "Chromsome",
+         ylab = " Log2 ratio", ylim = c(-5, 5), axes = FALSE,
+         xlim = c(0, max(locations) + 10))
+    axis(2)
+    box()
+    cghMCR:::highlightChrom(adjustments)
+    points(locations, x[["data"]][, sampleName], cex = 0.4, pch = 16)
+    lines(c(min(locations), max(locations)), rep(0, 2), lwd = 2)
+    lines(c(min(locations), max(locations)), rep(1, 2))
+    lines(c(min(locations), max(locations)), rep(-1, 2))
+    cghMCR:::drawSegs(segdata[segdata[, "ID"] == sampleName, ])
+    cghMCR:::markChrom(adjustments)
+  }
+  if(!is.null(args[["save"]]) && args[["save"]]){
+    dev.off()
+    return(tempPng)
+  }else{
+    return(invisible())
+  }
+}
+
+markChrom <- function(adjustments){
+  chromLocs <- NULL
+  chromNames <- NULL
+  for(i in 1:length(adjustments) - 1){
+    if(i %% 2 == 1){
+      chromLocs <- c(chromLocs, mean(c(adjustments[i], adjustments[i + 1])))
+      chromNames <- c(chromNames, names(adjustments)[i])
+    }
+  }
+  text(chromLocs, rep(-5.125, length(chromLocs)), chromNames, cex = 0.5)
+  return(invisible())
+}
+
+
+highlightChrom <- function(adjustments){
+  for(index in 1:length(adjustments)){
+    if(index %% 2 == 1){
+      polygon(c(adjustments[index], adjustments[index + 1],
+                adjustments[index + 1], adjustments[index]),
+              c(-5, -5, 5, 5), col = "gray", border = "white")
+    }
+  }
+  return(invisible())
+}
+
+
+drawSegs <- function(segdata){
+  drawSegLine <- function(segLocs){
+    lines(c(segLocs["loc.start"], segLocs["loc.end"]),
+          rep(segLocs["seg.mean"], 2), col = "red", lwd = 2)
+  }
+  junck <- apply(segdata, 1, FUN = drawSegLine)
+  return(invisible())
+}
+
+# This function gets the values that can be used to adjust chromosomal
+# locations to align genes on different chromosomes so that they  appear
+# in sequence from chromosome one to Y along a single strand
+getAdjustments <- function(positions){
+  temp <- split.data.frame(positions, factor(positions[, 1]))
+  temp <- unlist(lapply(temp, FUN = function(x) max(x[, 2])))
+  chroms <- sort(as.numeric(names(temp)[names(temp) %in% 1:24]))
+  if(any(names(temp) %in% "X")){
+    chroms <- c(chroms, "X")
+  }
+  if(any(names(temp) %in% "Y")){
+    chroms <- c(chroms, "Y")
+  }
+  adjustments <- 0
+  for(index in 1:length(chroms) - 1){
+    adjustments <- c(adjustments, (adjustments[length(adjustments)]+
+                                   temp[as.character(chroms[index])]))
+  }
+  names(adjustments) <- chroms
+  return(adjustments)
+}
+
+alignGenes <- function(positions){
+  adjustments <- getAdjustments(positions)
+  for(chrom in names(adjustments)){
+    positions[positions[, 1] == chrom, 2] <-
+      positions[positions[, 1] == chrom, 2] + adjustments[chrom]
+  }
+  return(positions[, 2])
+}
+
+adjustSegments <- function(segdata, adjustments){
+  for(chrom in names(adjustments)){
+    segdata[segdata[, "chrom"] == chrom, "loc.start"] <-
+      segdata[segdata[, "chrom"] == chrom, "loc.start"] + adjustments[chrom]
+    segdata[segdata[, "chrom"] == chrom, "loc.end"] <-
+      segdata[segdata[, "chrom"] == chrom, "loc.end"] + adjustments[chrom]
+  }
+  return(segdata)
+}
+
+
+  
+getSegData <- function(arrayRaw){
+  filter <- getProbeFilter(arrayRaw)
+  log2Ratio <- maM(arrayRaw)[filter, ]
+  chrom <- gsub("chr([0-9XY]+):.*", "\\1", maInfo(maGnames(
+                               arrayRaw))["SystematicName"][filter, 1])
+  pos <- gsub("chr.*-([0-9]+)", "\\1", maInfo(maGnames(
+                     arrayRaw))["SystematicName"][filter, 1])
+  probes <- maInfo(maGnames(sampleData))["ProbeName"][filter, 1]
+  CNA.object <- CNA(matrix(as.numeric(log2Ratio),
+                    ncol = ncol(log2Ratio), byrow = FALSE), chrom,
+                    as.numeric(pos), data.type = "logratio",
+                    sampleid = colnames(log2Ratio))
+  segdata <- segment(smooth.CNA(CNA.object))
+  segdata[["data"]] <- cbind(probe = probes, as.data.frame(segdata[["data"]]))
+
+  return(segdata)
+}
+
+getProbeFilter <- function(arrayRaw){
+  chrom <- gsub("chr([0-9XY]+):.*", "\\1", 
+                          maInfo(maGnames(arrayRaw))["SystematicName"][, 1])
+  
+  return(intersect(which(chrom %in% c(1:22, "X", "Y")), which(maInfo(
+                   maGnames(arrayRaw))["ControlType"] >= 0)))
+}
+
+
+cghMCR <- function(segments, margin = 0, gain.threshold = 0.5,
+                   loss.threshold = -0.5){
+  return(new("cghMCR", DNASeg = segments, margin = margin,
+          gain.threshold = gain.threshold, loss.threshold = loss.threshold))
+}

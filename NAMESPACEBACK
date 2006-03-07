@@ -1,0 +1,2 @@
+export(cghMCR, plot.DNAcopy, getSegments)
+exportClass(cghMCR)

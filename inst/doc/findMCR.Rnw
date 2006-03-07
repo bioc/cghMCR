@@ -1,0 +1,142 @@
+%\VignetteIndexEntry{cghMCR findMCR}
+%\VignetteKeyword{platform}
+%\VignettePackage{cghMCR}
+\documentclass[12pt]{article}
+\usepackage{hyperref}
+\textwidth=6.2in
+\textheight=8.5in
+%\parskip=.3cm
+\oddsidemargin=.1in
+\evensidemargin=.1in
+\headheight=-.3in
+
+\newcommand{\Robject}[1]{{\texttt{#1}}}
+\newcommand{\Rfunction}[1]{{\texttt{#1}}}
+\newcommand{\Rpackage}[1]{{\textit{#1}}}
+
+\begin{document}
+\author{Jianhua Zhang\and Bin Feng}
+
+\title{How to use cghMCR}
+
+\maketitle
+
+\section{Overview}
+
+This vignette demonstrate how to use \Rpackage{cghMCR} to locate minimum common regions (MCR) across arrayCGH profiles derived from different samples. MCR was initially proposed by Dr. Lynda Chin's lab (Aguirre et. al. 2004) to identify chromosome regions showing common gains/losses across samples using arrayCGH platform. The \Rpackage{cghMCR} pacakge implements the algothrim.    
+
+\section{Getting Started}
+
+The example data used in this vignette are artificially constructed following the \textit{Agilent} arrayCGH format within 5000 probes to maintain speed.   
+
+\subsection{Read the sample data}
+
+The sample data are stroed in the \textit{data} subdirectory and can be read in using \Rfunction{read.Agilent} of \Rpackage{marray}.
+
+<<>>=
+require("cghMCR")
+require("marray")
+sampleData <- read.Agilent(list.files(file.path(.path.package("cghMCR"), 
+                  "sampledata"), full.name = TRUE, pattern = "sample"), 
+                  path = "")
+@
+
+\Robject{sampleData} has three samples with intensity measures for 5000 probes.
+
+<<>>=
+maNsamples(sampleData)
+length(maLabels(maGnames(sampleData)))
+@ 
+
+It normally takes a few steps such as quality assessment and normalization before engaging data analysis. Here we conduct a loess normliztion that is supported by \Rfunction{marray}. Readers are referred to packages \Rpackage{marray} and \Rpackage{limma} for further information.
+
+<<>>=
+normedData <- maNorm(sampleData, norm = "loess")
+@ 
+
+\subsection{Identify chromosome segments}
+
+For each sample, we need to first identify chromosome segments having similar intensity measures. The function \Rfunction{getSegments} is a wrapper around the main functions provided by \Rpackage{DNAcopy} that are capable of detecting chromosome regions within which probe intensities remain similar.
+
+<<>>=
+segments <- getSegments(normedData)
+@
+
+Results from the segmentation analysis (\Robject{segments}) is a list with three elements:
+
+<<>>= 
+names(segments)
+@ 
+
+The \textit{data} element contain the normalized data, the \textit{output} element contains the chromosome segments identified, and the \textit{call} elements contains the function call with parameters passed indicated. Now, let's plot the original data and the segments to see what the segments look like.
+
+\begin{Sinput}
+> plot(segments)
+\end{Sinput}
+
+\begin{figure}[htbp]
+  \begin{center}
+    \includegraphics{segplot}
+    \caption{\label{Segmentation plot}
+    }
+  \end{center}
+\end{figure}
+
+\subsection{Identify MCRs}
+
+The element - \Robject{output} of the \Robject{segments} object generated in the previous section contains the segmentation data and will be used to get the MCRs. The parameter \Robject{margin} is numeric indicating how many basepairs should two adjancent segments be allowed to apart to be considered as one locus. Parameters \Robject{gain.threshold} and \Robject{loss.threshold} are also numerics indicating the minimum positive or maximum negative values for chromsome segments to be considered as gains or losses. 
+
+<<>>=
+cghmcr <- cghMCR(segments[["output"]], margin = 0, gain.threshold = 0.8,
+                 loss.threshold = -0.8)
+mcrs <- MCR(cghmcr)
+@ 
+
+Using the above settings, we get four MCRs but only one (on chromosome 7) of them are common to two samples.
+
+<<>>=
+print(cbind(mcrs[, c("chromosome", "status", "mcr.start", "mcr.end", 
+                     "samples")])) 
+@ 
+
+To include probe ids for the MCRs identified, we can call the function \Rfunction{mergeMCRProbes} to have probe ids within each MCR appended. Multiple probes are separated by a ",".
+
+<<>>=
+mcrs <- mergeMCRProbes(mcrs, segments[["data"]])
+print(cbind(mcrs[, c("chromosome", "status", "mcr.start", "mcr.end", 
+                     "probes")]))
+@ 
+
+
+\section{Session Information}
+
+The version number of R and packages loaded for generating the vignette were:
+
+<<echo=FALSE>>=
+sessionInfo()
+@
+
+\section{References}
+Aguirre, AJ, C. Brennan, G. Bailey, R. Sinha, B. Feng, C. Leo, Y. Zhang,
+J. Zhang, N. Bardeesy, C. Cauwels, C. Cordon-Cardo, MS Redston, RA DePinho and
+L. Chin. High-resolution Characterization of the Pancreatic Adenocarcinoma
+Genome. Proc Natl Acad Sci U S A. 2004. 101(24):9067-9072.
+
+
+\end{document}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

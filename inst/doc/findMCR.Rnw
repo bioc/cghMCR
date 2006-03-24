@@ -35,7 +35,6 @@ The sample data are stroed in the \textit{data} subdirectory and can be read in 
 
 <<>>=
 require("cghMCR")
-require("marray")
 sampleData <- read.Agilent(list.files(file.path(.path.package("cghMCR"), 
                   "sampledata"), full.name = TRUE, pattern = "sample"), 
                   path = "")
@@ -87,7 +86,7 @@ The \textit{data} element contain the normalized data, the \textit{output} eleme
 The element - \Robject{output} of the \Robject{segments} object generated in the previous section contains the segmentation data and will be used to get the MCRs. The parameter \Robject{margin} is numeric indicating how many basepairs should two adjancent segments be allowed to apart to be considered as one locus. Parameters \Robject{gain.threshold} and \Robject{loss.threshold} are also numerics indicating the minimum positive or maximum negative values for chromsome segments to be considered as gains or losses. 
 
 <<>>=
-cghmcr <- cghMCR(segments[["output"]], margin = 0, gain.threshold = 0.8,
+cghmcr <- cghMCR(segments, margin = 0, gain.threshold = 0.8,
                  loss.threshold = -0.8)
 mcrs <- MCR(cghmcr)
 @ 

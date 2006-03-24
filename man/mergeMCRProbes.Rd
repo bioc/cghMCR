@@ -35,7 +35,7 @@ mergeMCRProbes(mcr, rawData)
   sampleData <- read.Agilent(list.files(file.path(.path.package("cghMCR"),
     "sampledata"), full.name = TRUE, pattern = "sample"), path = "")
   segments <- getSegments(sampleData)
-  cghmcr <- cghMCR(segments[["output"]], margin = 0, gain.threshold = 0.8,
+  cghmcr <- cghMCR(segments, margin = 0, gain.threshold = 0.8,
                  loss.threshold = -0.8)
   mcrs <- MCR(cghmcr)
   mcrs <- mergeMCRProbes(mcrs, segments[["data"]])

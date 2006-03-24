@@ -5,6 +5,7 @@
 #
 
 setClass("cghMCR", representation(DNASeg = "data.frame",
+                                  DNAData = "data.frame",
                                margin = "numeric",
                                gain.threshold = "numeric",
                                loss.threshold = "numeric"))
@@ -15,6 +16,13 @@ if(!isGeneric("DNASeg")){
 }
 setMethod("DNASeg", "cghMCR",
           function(object) object@DNASeg)
+
+if(!isGeneric("DNAData")){
+  setGeneric("DNAData",
+             function(object) standardGeneric("DNAData"))
+}
+setMethod("DNAData", "cghMCR",
+          function(object) object@DNAData)
 
 if(!isGeneric("margin")){
   setGeneric("margin",
@@ -65,9 +73,13 @@ if(!isGeneric("MCR")){
              function(object) standardGeneric("MCR"))
 }
 setMethod("MCR", "cghMCR",
-          function(object) getMCR(DNASeg(object), overlap = margin(object),
+          function(object) {
+            temp <- getMCR(DNASeg(object), overlap = margin(object),
                                   ampLimit = gain.threshold(object),
-                                  delLimit = loss.threshold(object)))
+                                  delLimit = loss.threshold(object))
+            class(temp) <- "MCR"
+            return(temp)
+          })
 
 ####### Replace methods
 if(!isGeneric("DNASeg<-")){

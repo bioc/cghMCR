@@ -20,8 +20,8 @@
 \section{Slots}{
 	 \describe{
     \item{\code{DNASeg}:}{Object of class \code{"data.frame"} containing
-    segmentation data derived from segmentation analysis using
-    \code{\link{segment}} or \code{\link{getSegments}}}
+      segmentation data derived from segmentation analysis using segment
+      or \code{\link{getSegments}}}
     \item{\code{margin}:}{Object of class \code{"numeric"} indicating
       how far apart two adjacent segments are allowed to be considered
       to be of the same locus}
@@ -44,7 +44,8 @@
   Science of Dana-Farber Cancer Institute}
 
 \seealso{
-  \code{\code{\link{DNAcopy}}}}
+  \code{\link{cghMCR}}
+}
 \examples{
   require("cghMCR")
   require("marray")
@@ -52,7 +53,7 @@
                   "sampledata"), full.name = TRUE, pattern = "sample"), 
                   path = "")
   segments <- getSegments(sampleData)
-  cghmcr <- cghMCR(segments[["output"]], margin = 0, gain.threshold = 0.8,
+  cghmcr <- cghMCR(segments, margin = 0, gain.threshold = 0.8,
                  loss.threshold = -0.8)
 }
 \keyword{classes}

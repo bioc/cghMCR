@@ -182,17 +182,21 @@ mergeMCRProbes <- function(mcr, rawData){
 }
 
 
-plot.DNAcopy <- function(x, ...){
+plot.DNAcopy <- function(x, ..., save = FALSE, layout){
   args <- list(...)
   sampleNames <- unique(x[["output"]][, "ID"])
   locations <- cghMCR:::alignGenes(x[["data"]][, c("chrom", "maploc")])
   adjustments <- cghMCR:::getAdjustments(x[["data"]][, c("chrom", "maploc")])
   segdata <- cghMCR:::adjustSegments(x[["output"]], adjustments)
-  if(!is.null(args[["save"]]) && args[["save"]]){
+  if(save){
     tempPng <- file.path(tempdir(), "segments.png")
     png(filename = tempPng)
   }
-  par(mfrow = c(length(sampleNames), 1))
+  if(missing(layout)){
+    par(mfrow = c(length(sampleNames), 1))
+  }else{
+    par(mfrow = layout)
+  }
   for(sampleName in sampleNames){
     plot(0, 0, cex = 0, main = sampleName, xlab = "Chromsome",
          ylab = " Log2 ratio", ylim = c(-5, 5), axes = FALSE,
@@ -207,12 +211,68 @@ plot.DNAcopy <- function(x, ...){
     cghMCR:::drawSegs(segdata[segdata[, "ID"] == sampleName, ])
     cghMCR:::markChrom(adjustments)
   }
-  if(!is.null(args[["save"]]) && args[["save"]]){
+  if(save){
     dev.off()
     return(tempPng)
   }else{
     return(invisible())
   }
+}
+
+plotMCR <- function(x, ..., DNAData, threshold = 1, save = FALSE,
+                     expand = c(2000, 2000), layout){
+  
+  x <- x[unlist(lapply(strsplit(x[, "samples"], ","), length)) >= threshold, ]
+
+  if(save){
+    tempPng <- paste(tempfile("mcrs"), "png", sep = ".")
+    png(filename = tempPng)
+  }
+  if(missing(layout)){
+    par(mfrow = c(nrow(x), 1))
+  }else{
+    par(mfrow = layout)
+  }
+  for(index in 1:nrow(x)){
+    showMCR(x[index, "mcr.start"], x[index, "mcr.end"],
+            DNAData[DNAData[, "chrom"] == x[index, "chromosome"] &
+                     as.numeric(DNAData[, "maploc"]) >=
+                     (as.numeric(x[index, "mcr.start"]) - expand[1]) &
+                     as.numeric(DNAData[, "maploc"]) <=
+                     (as.numeric(x[index, "mcr.end"]) + expand[2]),
+                     c(3, which(colnames(DNAData) %in%
+                                unlist(strsplit(x[index, "samples"], ",")))),
+                     drop = FALSE])
+  }
+  if(save){
+    dev.off()
+    return(tempPng)
+  }else{
+    return(invisible())
+  }
+}
+  
+
+showMCR <- function(start, end, ratioMat, what = c("mean", "median")){
+  what = match.arg(what)
+  temp <- cbind(ratioMat[, 1], unlist(apply(ratioMat,
+                                     1, FUN = function(ratios){
+                                     ratios <- ratios[2:length(ratios)]
+                                     ratios<- ratios[!is.na(ratios)]
+                                     if(what == "mean"){
+                                       return(mean(as.numeric(ratios)))
+                                     }else{
+                                       return(median(as.numeric(ratios)))
+                                     }
+                                   })))
+  inSeg <- ratioMat[as.numeric(ratioMat[, 1]) >= start &
+                    as.numeric(ratioMat[, 1]) <= start, 2:ncol(ratioMat)]
+  lineValue <- ifelse(what == "mean", mean(inSeg, na.rm = TRUE),
+                      median(inSeg, na.rm = TRUE))
+  plot(temp[, 1], temp[, 2])
+  lines(c(start, end), c(lineValue, lineValue), col = "red")
+
+  return(invisible())
 }
 
 markChrom <- function(adjustments){
@@ -296,6 +356,7 @@ adjustSegments <- function(segdata, adjustments){
 getSegData <- function(arrayRaw){
   filter <- getProbeFilter(arrayRaw)
   log2Ratio <- maM(arrayRaw)[filter, ]
+  
   chrom <- gsub("chr([0-9XY]+):.*", "\\1", maInfo(maGnames(
                                arrayRaw))["SystematicName"][filter, 1])
   pos <- gsub("chr.*-([0-9]+)", "\\1", maInfo(maGnames(
@@ -322,6 +383,9 @@ getProbeFilter <- function(arrayRaw){
 
 cghMCR <- function(segments, margin = 0, gain.threshold = 0.5,
                    loss.threshold = -0.5){
-  return(new("cghMCR", DNASeg = segments, margin = margin,
+  return(new("cghMCR", DNASeg = segments[["output"]], margin = margin,
+             DNAData = segments[["data"]], 
           gain.threshold = gain.threshold, loss.threshold = loss.threshold))
 }
+
+

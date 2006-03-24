@@ -9,7 +9,7 @@ cghMCR(segments, margin = 0, gain.threshold = 0.5, loss.threshold = -0.5)
 }
 \arguments{
   \item{segments}{\code{segments} is a data frame extracted from the
-    "output" element of the object returned by \code{\link{segment}} of the
+    "output" element of the object returned by segment of the
     package DNAcopy or \code{\link{getSegments}}}
   \item{margin}{\code{margin} is a integer specifying how far apart two
     adjacent segments are allowed to be considered to be the same locus }
@@ -37,7 +37,7 @@ cghMCR(segments, margin = 0, gain.threshold = 0.5, loss.threshold = -0.5)
   sampleData <- read.Agilent(list.files(file.path(.path.package("cghMCR"),
     "sampledata"), full.name = TRUE, pattern = "sample"), path = "")
   segments <- getSegments(sampleData)
-  cghmcr <- cghMCR(segments[["output"]], margin = 0, gain.threshold = 0.8,
+  cghmcr <- cghMCR(segments, margin = 0, gain.threshold = 0.8,
                  loss.threshold = -0.8)
 }
 \keyword{methods}

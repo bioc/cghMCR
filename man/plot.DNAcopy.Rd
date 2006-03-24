@@ -41,9 +41,8 @@ plot.DNAcopy(x, ..., save = FALSE, layout)
 \seealso{\code{\link{getSegments}}}
 \examples{
   if(interactive()){
-    require("marray")
-    sampleData <- read.Agilent(list.files(file.path(.path.package("cghMCR"),
-      "sampledata"), full.name = TRUE, pattern = "sample"), path = "")
+    require("cghMCR")
+    data("sampleData")
     segments <- getSegments(sampleData)
     plot(segments)
   }

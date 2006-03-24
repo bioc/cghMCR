@@ -31,9 +31,8 @@ mergeMCRProbes(mcr, rawData)
   Science of Dana-Farber Cancer Institute}
 \seealso{\code{\link{MCR}}}
 \examples{
-  require("marray")
-  sampleData <- read.Agilent(list.files(file.path(.path.package("cghMCR"),
-    "sampledata"), full.name = TRUE, pattern = "sample"), path = "")
+  require("cghMCR")
+  data("sampleData")
   segments <- getSegments(sampleData)
   cghmcr <- cghMCR(segments, margin = 0, gain.threshold = 0.8,
                  loss.threshold = -0.8)

@@ -31,26 +31,20 @@ The example data used in this vignette are artificially constructed following th
 
 \subsection{Read the sample data}
 
-The sample data are stroed in the \textit{data} subdirectory and can be read in using \Rfunction{read.Agilent} of \Rpackage{marray}.
+The sample data are stroed in the \textit{data} subdirectory and can be loaded using \Rfunction{data}.
 
 <<>>=
 require("cghMCR")
-sampleData <- read.Agilent(list.files(file.path(.path.package("cghMCR"), 
-                  "sampledata"), full.name = TRUE, pattern = "sample"), 
-                  path = "")
+data("sampleData")
 @
+
+The sample data was created by reading three fabricated files using \Rfunction{read.Agilent} and then normalized using \Rfunction{maNorm} (norm = "loess") of \Rpackage{marray}. Readers are referred to \Rpackage{marray} for more information on how to read in Agilent profile data.  
 
 \Robject{sampleData} has three samples with intensity measures for 5000 probes.
 
 <<>>=
 maNsamples(sampleData)
 length(maLabels(maGnames(sampleData)))
-@ 
-
-It normally takes a few steps such as quality assessment and normalization before engaging data analysis. Here we conduct a loess normliztion that is supported by \Rfunction{marray}. Readers are referred to packages \Rpackage{marray} and \Rpackage{limma} for further information.
-
-<<>>=
-normedData <- maNorm(sampleData, norm = "loess")
 @ 
 
 \subsection{Identify chromosome segments}

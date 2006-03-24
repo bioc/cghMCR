@@ -1,5 +1,6 @@
 \name{cghMCR}
 \alias{cghMCR}
+\alias{sampleData}
 \title{The constructor for the cghMCR class}
 \description{
   Instantiates a cghMCR object using the parameters passed.
@@ -33,9 +34,8 @@ cghMCR(segments, margin = 0, gain.threshold = 0.5, loss.threshold = -0.5)
   Science of Dana-Farber Cancer Institute}
 \seealso{\code{\link{cghMCR}}}
 \examples{
-  require("marray")
-  sampleData <- read.Agilent(list.files(file.path(.path.package("cghMCR"),
-    "sampledata"), full.name = TRUE, pattern = "sample"), path = "")
+  require("cghMCR")
+  data("sampleData")
   segments <- getSegments(sampleData)
   cghmcr <- cghMCR(segments, margin = 0, gain.threshold = 0.8,
                  loss.threshold = -0.8)

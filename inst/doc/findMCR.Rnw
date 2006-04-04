@@ -52,7 +52,7 @@ length(maLabels(maGnames(sampleData)))
 For each sample, we need to first identify chromosome segments having similar intensity measures. The function \Rfunction{getSegments} is a wrapper around the main functions provided by \Rpackage{DNAcopy} that are capable of detecting chromosome regions within which probe intensities remain similar.
 
 <<>>=
-segments <- getSegments(normedData)
+segments <- getSegments(sampleData)
 @
 
 Results from the segmentation analysis (\Robject{segments}) is a list with three elements:

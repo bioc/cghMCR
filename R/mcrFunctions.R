@@ -242,7 +242,7 @@ plotMCR <- function(x, ..., DNAData, threshold = 1, save = FALSE,
                      (as.numeric(x[index, "mcr.end"]) + expand[2]),
                      c(3, which(colnames(DNAData) %in%
                                 unlist(strsplit(x[index, "samples"], ",")))),
-                     drop = FALSE])
+                     drop = FALSE], "median")
   }
   if(save){
     dev.off()
@@ -265,14 +265,55 @@ showMCR <- function(start, end, ratioMat, what = c("mean", "median")){
                                        return(median(as.numeric(ratios)))
                                      }
                                    })))
-  inSeg <- ratioMat[as.numeric(ratioMat[, 1]) >= start &
-                    as.numeric(ratioMat[, 1]) <= start, 2:ncol(ratioMat)]
-  lineValue <- ifelse(what == "mean", mean(inSeg, na.rm = TRUE),
-                      median(inSeg, na.rm = TRUE))
+  #inSeg <- unlist(ratioMat[as.numeric(ratioMat[, 1]) >= start &
+  #                  as.numeric(ratioMat[, 1]) <= end, 2:ncol(ratioMat),
+  #                  drop = FALSE])
+  #lineValue <- ifelse(what == "mean", mean(as.numeric(inSeg), na.rm = TRUE),
+  #                    median(as.numeric(inSeg), na.rm = TRUE))
+  left <- as.numeric(unlist(ratioMat[as.numeric(ratioMat[, 1]) < start,
+                                     2:ncol(ratioMat), drop = FALSE]))
+  inSeg <- as.numeric(unlist(ratioMat[as.numeric(ratioMat[, 1]) >= start &
+                                      as.numeric(ratioMat[, 1]) <= end,
+                                      2:ncol(ratioMat), drop = FALSE]))
+  right <- as.numeric(unlist(ratioMat[as.numeric(ratioMat[, 1]) > end,
+                                      2:ncol(ratioMat), drop = FALSE]))
   plot(temp[, 1], temp[, 2])
-  lines(c(start, end), c(lineValue, lineValue), col = "red")
+  if(length(left) > 0){
+    lines(c(min(ratioMat[as.numeric(ratioMat[, 1]) < start, 1]),
+            max(ratioMat[as.numeric(ratioMat[, 1]) < start, 1])),
+          rep(ifelse(what == "mean", mean(left), median(left)), 2),
+          col = "red")
+  }
+  lines(c(start, end), rep(ifelse(what == "mean", mean(inSeg), median(inSeg)),
+                           2), col = "red")
+  if(length(right) > 0){
+    lines(c(min(ratioMat[as.numeric(ratioMat[, 1]) > end, 1]),
+            max(ratioMat[as.numeric(ratioMat[, 1]) > end, 1])),
+          rep(ifelse(what == "mean", mean(left), median(right)), 2),
+          col = "red")
+  }
+  
 
   return(invisible())
+}
+
+getLineData <- function(start, end, ratioMat, what){
+  left <- as.numeric(unlist(ratioMat[as.numeric(ratioMat[, 1]) < start,
+                                     2:ncol(ratioMat), drop = FALSE]))
+  inSeg <- as.numeric(unlist(ratioMat[as.numeric(ratioMat[, 1]) >= start &
+                                      as.numeric(ratioMat[, 1]) <= end,
+                                      2:ncol(ratioMat), drop = FALSE]))
+  right <- as.numeric(unlist(ratioMat[as.numeric(ratioMat[, 1]) > end,
+                                      2:ncol(ratioMat), drop = FALSE]))
+  if(length(left) > 0){
+    means <- c(means, ifelse(what == "mean", mean(left), median(left)))
+  }
+  means <- c(means, ifelse(what == "mean", mean(inSeg), median(inSeg)))
+  if(length(right) > 0){
+    means <- c(means, ifelse(what == "mean", mean(right), median(right)))
+  }
+  
+  return(means)
 }
 
 markChrom <- function(adjustments){
@@ -361,7 +402,7 @@ getSegData <- function(arrayRaw){
                                arrayRaw))["SystematicName"][filter, 1])
   pos <- gsub("chr.*-([0-9]+)", "\\1", maInfo(maGnames(
                      arrayRaw))["SystematicName"][filter, 1])
-  probes <- maInfo(maGnames(sampleData))["ProbeName"][filter, 1]
+  probes <- maInfo(maGnames(arrayRaw))["ProbeName"][filter, 1]
   CNA.object <- CNA(matrix(as.numeric(log2Ratio),
                     ncol = ncol(log2Ratio), byrow = FALSE), chrom,
                     as.numeric(pos), data.type = "logratio",

@@ -219,8 +219,8 @@ plot.DNAcopy <- function(x, ..., save = FALSE, layout){
   }
 }
 
-plotMCR <- function(x, ..., DNAData, threshold = 1, save = FALSE,
-                     expand = c(2000, 2000), layout){
+plot.MCR <- function(x, ..., DNAData, threshold = 1, save = FALSE,
+                     expand = c(2000, 2000), layout, range = 1:5){
   
   x <- x[unlist(lapply(strsplit(x[, "samples"], ","), length)) >= threshold, ]
 
@@ -228,12 +228,10 @@ plotMCR <- function(x, ..., DNAData, threshold = 1, save = FALSE,
     tempPng <- paste(tempfile("mcrs"), "png", sep = ".")
     png(filename = tempPng)
   }
-  if(missing(layout)){
-    par(mfrow = c(nrow(x), 1))
-  }else{
+  if(!missing(layout)){
     par(mfrow = layout)
   }
-  for(index in 1:nrow(x)){
+  for(index in range){
     showMCR(x[index, "mcr.start"], x[index, "mcr.end"],
             DNAData[DNAData[, "chrom"] == x[index, "chromosome"] &
                      as.numeric(DNAData[, "maploc"]) >=
@@ -265,32 +263,32 @@ showMCR <- function(start, end, ratioMat, what = c("mean", "median")){
                                        return(median(as.numeric(ratios)))
                                      }
                                    })))
-  #inSeg <- unlist(ratioMat[as.numeric(ratioMat[, 1]) >= start &
-  #                  as.numeric(ratioMat[, 1]) <= end, 2:ncol(ratioMat),
-  #                  drop = FALSE])
-  #lineValue <- ifelse(what == "mean", mean(as.numeric(inSeg), na.rm = TRUE),
-  #                    median(as.numeric(inSeg), na.rm = TRUE))
-  left <- as.numeric(unlist(ratioMat[as.numeric(ratioMat[, 1]) < start,
+  left <- as.numeric(unlist(ratioMat[as.numeric(ratioMat[, 1]) <
+                                     as.numeric(start),
                                      2:ncol(ratioMat), drop = FALSE]))
-  inSeg <- as.numeric(unlist(ratioMat[as.numeric(ratioMat[, 1]) >= start &
-                                      as.numeric(ratioMat[, 1]) <= end,
+  inSeg <- as.numeric(unlist(ratioMat[as.numeric(ratioMat[, 1]) >=
+                                      as.numeric(start) &
+                                      as.numeric(ratioMat[, 1]) <=
+                                      as.numeric(end),
                                       2:ncol(ratioMat), drop = FALSE]))
-  right <- as.numeric(unlist(ratioMat[as.numeric(ratioMat[, 1]) > end,
+  right <- as.numeric(unlist(ratioMat[as.numeric(ratioMat[, 1]) >
+                                      as.numeric(end),
                                       2:ncol(ratioMat), drop = FALSE]))
-  plot(temp[, 1], temp[, 2])
+  plot(temp[, 1], temp[, 2], xlab = "Chromosomal location",
+       ylab = "Log2 ratio")
   if(length(left) > 0){
-    lines(c(min(ratioMat[as.numeric(ratioMat[, 1]) < start, 1]),
-            max(ratioMat[as.numeric(ratioMat[, 1]) < start, 1])),
+    lines(c(min(ratioMat[as.numeric(ratioMat[, 1]) < as.numeric(start), 1]),
+            max(ratioMat[as.numeric(ratioMat[, 1]) < as.numeric(start), 1])),
           rep(ifelse(what == "mean", mean(left), median(left)), 2),
-          col = "red")
+          col = "red", lwd = 2)
   }
   lines(c(start, end), rep(ifelse(what == "mean", mean(inSeg), median(inSeg)),
-                           2), col = "red")
+                           2), col = "red", lwd = 2)
   if(length(right) > 0){
-    lines(c(min(ratioMat[as.numeric(ratioMat[, 1]) > end, 1]),
-            max(ratioMat[as.numeric(ratioMat[, 1]) > end, 1])),
+    lines(c(min(ratioMat[as.numeric(ratioMat[, 1]) > as.numeric(end), 1]),
+            max(ratioMat[as.numeric(ratioMat[, 1]) > as.numeric(end), 1])),
           rep(ifelse(what == "mean", mean(left), median(right)), 2),
-          col = "red")
+          col = "red", lwd = 2)
   }
   
 
@@ -430,3 +428,25 @@ cghMCR <- function(segments, margin = 0, gain.threshold = 0.5,
 }
 
 
+showSegment <- function(dataMat, chromosome, start, end, samples = NA,
+                        what = c("mean", "median")){
+  getMean <- function(x){
+    x <- x[-(1:3)]
+    if(!is.na(samples)){
+      x <- x[samples]
+    }
+    return(ifelse(what == "mean", mean(as.numeric(x), na.rm = TRUE),
+                  median(as.numeric(x), na.rm = TRUE)))
+  }
+  what = match.arg(what)
+  temp <- dataMat[dataMat[, "chrom"] == chromosome &
+                  as.numeric(dataMat[, "maploc"]) >= as.numeric(start) &
+                  as.numeric(dataMat[, "maploc"]) <= as.numeric(end),
+                  , drop = FALSE]
+  y <- apply(temp, 1, FUN = getMean)
+  plot(temp[, "maploc"], y, xlab = "Chromosomal location",
+       ylab = ifelse(what == "mean", "Mean across samples",
+         "Median across samples"))
+  
+  return(invisible())
+}

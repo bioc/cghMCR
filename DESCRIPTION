@@ -1,6 +1,6 @@
 Package: cghMCR
-Version: 1.1.0
-Date: 2006-03-01
+Version: 1.1.1
+Date: 2006-04-12
 Title: Find chromosome regions showing common gains/losses
 Author: J. Zhang and B. Feng
 Maintainer: J. Zhang <jzhang@jimmy.harvard.edu>

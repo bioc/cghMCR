@@ -5,7 +5,7 @@
 
 # Gets the MCRs based on the segmentation data contained by segList.
 # segList is a data frame extracted from the output of DNAcopy
-getMCR <- function(segList, overlap = 0, ampLimit, delLimit){
+getMCR <- function(cghmcr){
   
   getMCR4Locus <- function(loc.pos, chromosome){
     if(loc.pos["status"] == "gain"){
@@ -29,36 +29,36 @@ getMCR <- function(segList, overlap = 0, ampLimit, delLimit){
     }
     if(nrow(segInLoc) > 0){
       mcrByLocus <- findMCR(segInLoc)
-      mcrs <<- rbind(mcrs, cbind(chromosome, loc.pos["locus"],
+      mcrs <<- rbind(mcrs, cbind(chromosome, loc.pos["span"],
                                  loc.pos["status"], loc.pos["loc.start"],
                                  loc.pos["loc.end"], mcrByLocus))
     }
   }
-  if(!missing(ampLimit)){
-    segList <- segList[as.numeric(segList[, "seg.mean"]) < 0 |
-                       as.numeric(segList[, "seg.mean"]) >= ampLimit,
-                       , drop = FALSE]
-  }
-  if(!missing(delLimit)){
-    segList <- segList[as.numeric(segList[, "seg.mean"]) > 0 |
-                       as.numeric(segList[, "seg.mean"]) <= delLimit,
-                       , drop = FALSE]
-  }
+  # Find altered regions based on the percentile values defined
+  segList <- altered(cghmcr) <- getAlteredSegs(cghmcr)
+  # Join altered regions that are separated by less than 500 kb
+  spans <- as.data.frame(mergeSegs(altered(cghmcr),
+                                           gapAllowed(cghmcr)))
   mcrs <- NULL
-  temp <- split.data.frame(segList, factor(segList[, "chrom"]))
-  locus <- lapply(temp, getLocus, overlap = overlap)
-  for(chrom in names(locus)){
-    locusByChrom <- locus[[chrom]]
-    junk <- apply(locusByChrom, 1, getMCR4Locus, chromosome = chrom) 
+  temp <- split.data.frame(altered(cghmcr),
+                           factor(altered(cghmcr)[, "chrom"]))
+  #locus <- lapply(temp, getLocus, overlap = overlap)
+  for(chrom in as.vector(spans[, "chrom"])){
+    #locusByChrom <- locus[[chrom]]
+    junk <- apply(spans[spans[, "chrom"] == chrom, , drop = FALSE], 1,
+                  getMCR4Locus, chromosome = chrom) 
   }
   colnames(mcrs) <- c("chromosome", "locus", "status", "loc.start",
-                      "loc.end", "mcr", "mcr.start", "mcr.end", "samples")
+                      "loc.end", "mcr", "mcr.start", "mcr.end", "samples",
+                      "counts")
   rownames(mcrs) <- mcrs[, 1]
+  mcrs <- mcrs[as.numeric(mcrs[, "counts"])/(ncol(DNAData(cghmcr)) - 3) >=
+               recurrence(cghmcr)/100, -ncol(mcrs), drop = FALSE]
   
   return(mcrs)
 }
 
-# Takes the segment data for a givan chromosome and returns a data from
+# Takes the segment data for a givan chromosome and returns a data frame
 # defining the loci identified. Segments are considered to belong to the
 # same locus unless they overlap by the number of bases specified by
 # variable 'overlap'.
@@ -75,6 +75,105 @@ getLocus <- function(segData, overlap = 500){
   }
   return(locus)
 }
+                  
+
+# Filters out segments based on given thresholds
+getAlteredSegs <- function(cghmcr){
+  segList <- split.data.frame(DNASeg(cghmcr), factor(DNASeg(cghmcr)[, "ID"]))
+  toReturn <- NULL
+  for(sample in names(segList)){
+    thresholds <- quantile(DNAData(cghmcr)[, sample],
+                      prob = c(alteredLow(cghmcr), alteredHigh(cghmcr)))
+    temp <- segList[[sample]]
+    toReturn <- rbind(toReturn, temp[temp[, "seg.mean"] < thresholds[1] |
+                              temp[, "seg.mean"] > thresholds[2], ,
+                              drop = FALSE])
+  }
+  return(toReturn)
+}
+
+
+mergeSegs <- function(segs, gapAllowed){
+  if(nrow(segs) < 2){
+    span <- c(chrom = segs[, "chrom"], status = ifelse(segs[, "seg.mean"]
+              >= 0, "gain", "loss"), span = "span.1",
+              loc.start = segs[,"loc.start"], loc.end = segs["loc.end"])
+  }else{
+    span <- NULL
+    temp <- splitSegments(segs)
+    for(chrom in names(temp)){
+      for(sign in names(temp[[chrom]])){
+        segBySign <- temp[[chrom]][[sign]]
+        if(nrow(segBySign) != 0){
+          span  <- rbind(span, findSpan(segBySign, gapAllowed))
+        }
+      }
+    }
+  }
+  return(span)
+}
+
+# finds the segment spans on a given chromosome
+findSpan <- function(segData, gapAllowed = 50000){
+  span <- NULL
+
+  chrom <- as.vector(segData[1, "chrom"])
+  status <-ifelse(segData[1, "seg.mean"] >= 0, "gain", "loss")
+  begin <- min(segData[, "loc.start"])
+  end <- max(segData[segData[, "loc.start"] == begin, "loc.end"])
+  if(end >= max(segData[, "loc.end"])){
+    span <- rbind(span, c(chrom, status, "span.1", begin, end))
+  }else{
+    spanCounter <- 1
+    while(TRUE){
+      # Subsetting segments that overlap with the locus currently defined
+      tempData <- segData[segData[, "loc.start"] != begin, , drop = FALSE]
+      tempData <- tempData[tempData[, "loc.end"] > end &
+                        tempData[, "loc.start"] <=  end + gapAllowed,
+                       , drop = FALSE]
+      if(nrow(tempData) < 1){
+        # Segments break, define one locus
+        span <- rbind(span, c(chrom, status, paste("span.", spanCounter,
+                                             sep = ""), begin, end))
+        spanCounter <- spanCounter + 1
+        # Drop the ones have been processed
+        segData <- segData[segData[, "loc.start"] > end + gapAllowed, ,
+                           drop = FALSE]
+        if(nrow(segData) < 1){
+          break
+        }else{
+          # Define the begining of another locus
+          begin <- min(segData[, "loc.start"])
+          end <- max(segData[segData[, "loc.start"] == begin, "loc.end"])
+        }
+      }else{
+        end <- max(tempData[, "loc.end"])
+        # End of the data
+        if(end >= max(segData[, "loc.end"])){
+          span <- rbind(span, c(chrom, status, paste("span.", spanCounter,
+                                              sep = ""), begin, end))
+          break
+        }
+      }
+    }
+  }
+  colnames(span) <- c("chrom", "status", "span", "loc.start", "loc.end")
+  return(span)
+}
+
+
+splitSegments <- function(segs){
+  temp <- split.data.frame(segs, factor(segs[, "chrom"]))
+  return(lapply(temp, splitSegByMean))
+}
+
+splitSegByMean <- function(segs){
+  posMeans <- segs[as.numeric(segs[, "seg.mean"]) >= 0, , drop = FALSE]
+  negMeans <- segs[as.numeric(segs[, "seg.mean"]) < 0, , drop = FALSE]
+  return(list(gain = posMeans[order(posMeans[, "loc.start"]),, drop = FALSE],
+              loss = negMeans[order(negMeans[, "loc.start"]), , drop = FALSE]))
+}
+ 
 
 findLocus <- function(segData, overlap = 500){
   locus <- NULL
@@ -128,7 +227,7 @@ findMCR <- function(segData){
   mcrs <- NULL
   if(nrow(segData) == 1){
     mcrs <- matrix(c("mcr.1", segData[, "loc.start"], segData[, "loc.end"],
-              segData[, "ID"]), ncol = 4)
+              segData[, "ID"], 1), ncol = 5)
   }else{
     mcrCounter <- 1
     pMCRs <- getPotentialMCR(segData)
@@ -141,12 +240,13 @@ findMCR <- function(segData){
         mcrs <- rbind(mcrs, c(paste("mcr", mcrCounter, sep = "."),
                               pMCRs[index, "mcr.start"],
                               pMCRs[index, "mcr.end"],
-                              paste(unique(segs), sep = "", collapse = ",")))
+                              paste(unique(segs), sep = "", collapse = ","),
+                              length(unique(segs))))
         mcrCounter <- mcrCounter + 1
       }
     }
   }
-  colnames(mcrs) <- c("mcr.num", "mcr.start", "mcr.end", "samples")
+  colnames(mcrs) <- c("mcr.num", "mcr.start", "mcr.end", "samples", "counts")
 
   return(mcrs)
 }
@@ -420,11 +520,13 @@ getProbeFilter <- function(arrayRaw){
 }
 
 
-cghMCR <- function(segments, margin = 0, gain.threshold = 0.5,
-                   loss.threshold = -0.5){
-  return(new("cghMCR", DNASeg = segments[["output"]], margin = margin,
-             DNAData = segments[["data"]], 
-          gain.threshold = gain.threshold, loss.threshold = loss.threshold))
+cghMCR <- function(segments, gapAllowed = 500, alteredLow = 0.03,
+                   alteredHigh = 0.97, spanLimit = 20000000,
+                   recurrence = 75){
+  return(new("cghMCR", DNASeg = segments[["output"]], gapAllowed = gapAllowed,
+             DNAData = segments[["data"]], alteredLow = alteredLow,
+             alteredHigh = alteredHigh, spanLimit = spanLimit, 
+             recurrence = recurrence))
 }
 
 

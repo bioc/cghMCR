@@ -34,8 +34,8 @@ mergeMCRProbes(mcr, rawData)
   require("cghMCR")
   data("sampleData")
   segments <- getSegments(sampleData)
-  cghmcr <- cghMCR(segments, margin = 0, gain.threshold = 0.8,
-                 loss.threshold = -0.8)
+  cghmcr <- cghMCR(segments, gapAllowed = 500, alteredLow = 0.20,
+                   alteredHigh = 0.80, recurrence = 50)
   mcrs <- MCR(cghmcr)
   mcrs <- mergeMCRProbes(mcrs, segments[["data"]])
 }

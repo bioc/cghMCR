@@ -6,20 +6,29 @@
   Instantiates a cghMCR object using the parameters passed.
 }
 \usage{
-cghMCR(segments, margin = 0, gain.threshold = 0.5, loss.threshold = -0.5)
+cghMCR(segments, gapAllowed = 500, alteredLow = 0.03, alteredHigh =
+0.97, spanLimit = 2e+07, recurrence = 75)
 }
 \arguments{
   \item{segments}{\code{segments} is a data frame extracted from the
     "output" element of the object returned by segment of the
     package DNAcopy or \code{\link{getSegments}}}
-  \item{margin}{\code{margin} is a integer specifying how far apart two
-    adjacent segments are allowed to be considered to be the same locus }
-  \item{gain.threshold}{\code{gain.threshold} is a positive integer
-    specifying the reshold log2 ratio when a segment of chromosome
-    can be considered to be a gain}
-  \item{loss.threshold}{\code{loss.threshold} is a negative integer
-    specifying the reshold log2 ratio when a segment of chromosome can
-    be considered to be a loss}
+  \item{gapAllowed}{\code{gapAllowed} is an integer specifying low
+    threshold of base pair number to separate two adjacent segments,
+    belower which the two segments will be joined as an altered span}
+  \item{alteredLow}{\code{alteredLow} is a positive number between 0 and
+    1 specifying the lower reshold percential value. Only segments with
+    values falling below this threshold are considered as altered span}
+  \item{alteredHigh}{\code{alteredHigh} is a positive number between 0 and
+    1 specifying the upper reshold percential value. Only segments with
+    values falling over this threshold are considered as altered span}
+  \item{recurrence}{\code{recurrence} is an integer between 1 and 100
+    that specifies the rate of occurrence for a gain or loss that are
+    observed across sample. Only gains/losses with ocurrence rate grater
+    than the threshold values are declared as MCRs}
+  \item{spanLimit} {\code{spanLimit} is an integer that defines the
+    leangh of altered spans that can be considered as locus. It is not
+    of any use at this time}
 }
 \details{
   The function is just a constructor of the \code{\link{cghMCR}} class
@@ -37,7 +46,7 @@ cghMCR(segments, margin = 0, gain.threshold = 0.5, loss.threshold = -0.5)
   require("cghMCR")
   data("sampleData")
   segments <- getSegments(sampleData)
-  cghmcr <- cghMCR(segments, margin = 0, gain.threshold = 0.8,
-                 loss.threshold = -0.8)
+  cghmcr <- cghMCR(segments, gapAllowed = 500, alteredLow = 0.20,
+                   alteredHigh = 0.80, recurrence = 50)
 }
 \keyword{methods}

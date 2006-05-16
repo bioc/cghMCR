@@ -23,15 +23,24 @@
 
 \section{Overview}
 
-This vignette demonstrate how to use \Rpackage{cghMCR} to locate minimum common regions (MCR) across arrayCGH profiles derived from different samples. MCR was initially proposed by Dr. Lynda Chin's lab (Aguirre et. al. 2004) to identify chromosome regions showing common gains/losses across samples using arrayCGH platform. The \Rpackage{cghMCR} pacakge implements the algothrim.    
+This vignette demonstrate how to use \Rpackage{cghMCR} to locate minimum common regions (MCR) across arrayCGH profiles derived from different samples. MCR was initially proposed by Dr. Lynda Chin's lab (Aguirre et. al. 2004) to identify chromosome regions showing common gains/losses across samples using arrayCGH platform. The \Rpackage{cghMCR} pacakge implements the algothrim as described below:
+
+\begin{itemize}
+\item MCRs are identified based on the segments obtained using \Rpackage{DNAcopy} 
+\item Segments above an upper (defined by a parameter \Robject{alteredHigh}) and lower (\Robject{alteredLow}) threshold values of percentile are identified as altered.   
+\item If two or more altered segments are deparated by less than 500 kb, the entire region spanned by the segments is considered to be an altered span.
+\item Highly altered segments or spans are retained as informative spans that define descrete locus boundaries.
+\item Informative spanes are compared acress samples to identify overlapping groups of positive or negative value segments.
+\item Minimal common regions (MCRs) are defined as contiguous spans having at least a recurrence rate defined by a parameter (\Robject{recurrence}} across samples. 
+\end{itemize}    
 
 \section{Getting Started}
 
-The example data used in this vignette are artificially constructed following the \textit{Agilent} arrayCGH format within 5000 probes to maintain speed.   
+The example data used in this vignette are artificially constructed following the \textit{Agilent} arrayCGH format with 5000 probes to maintain a reasonable speed of execution.   
 
 \subsection{Read the sample data}
 
-The sample data are stroed in the \textit{data} subdirectory and can be loaded using \Rfunction{data}.
+The sample data are stored in the \textit{data} subdirectory and can be loaded using \Rfunction{data}.
 
 <<>>=
 require("cghMCR")
@@ -77,11 +86,10 @@ The \textit{data} element contain the normalized data, the \textit{output} eleme
 
 \subsection{Identify MCRs}
 
-The element - \Robject{output} of the \Robject{segments} object generated in the previous section contains the segmentation data and will be used to get the MCRs. The parameter \Robject{margin} is numeric indicating how many basepairs should two adjancent segments be allowed to apart to be considered as one locus. Parameters \Robject{gain.threshold} and \Robject{loss.threshold} are also numerics indicating the minimum positive or maximum negative values for chromsome segments to be considered as gains or losses. 
-
+The element - \Robject{output} of the \Robject{segments} object generated in the previous section contains the segmentation data and will be used to get the MCRs. The parameter \Robject{gapAllowed} is numeric and indicate how many basepairs should two adjancent segments be apart, below which the segments will be joined to form an altered span. Parameters \Robject{alteredLow} and \Robject{alteredHigh} are also numerics and specify the lower and upper percential threshold values. Only segements with means less or greater than the lower or upper threshold values will be considered as altered regions and included in the subsequent analysis. \Robject{recurrence} is an integer defining the rate of recurrence for a region to show gain/loss across samples before it can be declared as an MCR. Due to the small number of probes in the sample data, the parameters are set to values that result in presentable results rather than correctness.
 <<>>=
-cghmcr <- cghMCR(segments, margin = 0, gain.threshold = 0.8,
-                 loss.threshold = -0.8)
+cghmcr <- cghMCR(segments, gapAllowed = 500, alteredLow = 0.20,
+                   alteredHigh = 0.80, recurrence = 50)
 mcrs <- MCR(cghmcr)
 @ 
 

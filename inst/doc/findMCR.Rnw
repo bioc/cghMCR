@@ -31,7 +31,7 @@ This vignette demonstrate how to use \Rpackage{cghMCR} to locate minimum common 
 \item If two or more altered segments are deparated by less than 500 kb, the entire region spanned by the segments is considered to be an altered span.
 \item Highly altered segments or spans are retained as informative spans that define descrete locus boundaries.
 \item Informative spanes are compared acress samples to identify overlapping groups of positive or negative value segments.
-\item Minimal common regions (MCRs) are defined as contiguous spans having at least a recurrence rate defined by a parameter (\Robject{recurrence}} across samples. 
+\item Minimal common regions (MCRs) are defined as contiguous spans having at least a recurrence rate defined by a parameter (\Robject{recurrence}) across samples. 
 \end{itemize}    
 
 \section{Getting Started}

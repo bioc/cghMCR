@@ -36,6 +36,12 @@ getMCR <- function(cghmcr){
   }
   # Find altered regions based on the percentile values defined
   segList <- altered(cghmcr) <- getAlteredSegs(cghmcr)
+  if(nrow(segList) == 0){
+    cat(paste("cghMCR settings do not allow for the detection of any",
+        "altered segments.\n"))
+    cat("You may change the settings and try again.\n")
+    return(NA)
+  }
   # Join altered regions that are separated by less than 500 kb
   spans <- as.data.frame(mergeSegs(altered(cghmcr),
                                            gapAllowed(cghmcr)))

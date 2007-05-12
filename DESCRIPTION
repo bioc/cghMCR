@@ -12,4 +12,4 @@ Keyword: arrayCGH
 biocViews: Platform, Microarray
 License: LGPL
 ZipData: yes
-SaveImage: yes
+LazyLoad: yes

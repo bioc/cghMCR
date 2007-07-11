@@ -12,12 +12,18 @@ setClass("cghMCR", representation(DNASeg = "data.frame",
                                   spanLimit = "numeric",
                                   alteredLow = "numeric",
                                   alteredHigh = "numeric",
-                                  recurrence = "numeric"))
+                                  recurrence = "numeric",
+                                  thresholdType = "character"))
 
 setGeneric("DNASeg",
            function(object) standardGeneric("DNASeg"))
 setMethod("DNASeg", "cghMCR",
           function(object) object@DNASeg)
+
+setGeneric("thresholdType",
+           function(object) standardGeneric("thresholdType"))
+setMethod("thresholdType", "cghMCR",
+          function(object) object@thresholdType)
 
 setGeneric("DNAData",
              function(object) standardGeneric("DNAData"))
@@ -101,6 +107,11 @@ setGeneric("DNAData<-", function(object, value)
            standardGeneric("DNAData<-"))
 setReplaceMethod("DNAData", "cghMCR", function(object, value){
   object@DNAData <- value; object})
+
+setGeneric("thresholdType<-", function(object, value)
+           standardGeneric("thresholdType<-"))
+setReplaceMethod("thresholdType", "cghMCR", function(object, value){
+  object@thresholdType <- value; object})
 
 setGeneric("altered<-", function(object, value)
            standardGeneric("altered<-"))

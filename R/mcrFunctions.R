@@ -88,12 +88,15 @@ getAlteredSegs <- function(cghmcr){
   segList <- split.data.frame(DNASeg(cghmcr), factor(DNASeg(cghmcr)[, "ID"]))
   toReturn <- NULL
   for(sample in names(segList)){
-    thresholds <- quantile(DNAData(cghmcr)[, sample],
-                      prob = c(alteredLow(cghmcr), alteredHigh(cghmcr)))
+    switch(thresholdType(cghmcr),
+           quantile = thresholds <- quantile(DNAData(cghmcr)[, sample],
+             prob = c(alteredLow(cghmcr), alteredHigh(cghmcr)), na.rm = TRUE),
+           value = thresholds <- c(alteredLow(cghmcr), alteredHigh(cghmcr)))
+    
     temp <- segList[[sample]]
     toReturn <- rbind(toReturn, temp[temp[, "seg.mean"] < thresholds[1] |
-                              temp[, "seg.mean"] > thresholds[2], ,
-                              drop = FALSE])
+                                     temp[, "seg.mean"] > thresholds[2], ,
+                                     drop = FALSE])
   }
   return(toReturn)
 }
@@ -528,11 +531,14 @@ getProbeFilter <- function(arrayRaw){
 
 cghMCR <- function(segments, gapAllowed = 500, alteredLow = 0.03,
                    alteredHigh = 0.97, spanLimit = 20000000,
-                   recurrence = 75){
+                   recurrence = 75, thresholdType = c("quantile", "value")){
+
+  thresholdType <- match.arg(thresholdType)
+  
   return(new("cghMCR", DNASeg = segments[["output"]], gapAllowed = gapAllowed,
              DNAData = segments[["data"]], alteredLow = alteredLow,
              alteredHigh = alteredHigh, spanLimit = spanLimit, 
-             recurrence = recurrence))
+             recurrence = recurrence, thresholdType = thresholdType))
 }
 
 

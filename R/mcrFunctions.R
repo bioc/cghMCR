@@ -46,13 +46,13 @@ getMCR <- function(cghmcr){
   spans <- as.data.frame(mergeSegs(altered(cghmcr),
                                            gapAllowed(cghmcr)))
   mcrs <- NULL
-  temp <- split.data.frame(altered(cghmcr),
-                           factor(altered(cghmcr)[, "chrom"]))
+  #temp <- split.data.frame(altered(cghmcr),
+  #                         factor(altered(cghmcr)[, "chrom"]))
   #locus <- lapply(temp, getLocus, overlap = overlap)
-  for(chrom in as.vector(spans[, "chrom"])){
-    #locusByChrom <- locus[[chrom]]
+  for(chrom in as.vector(unique(spans[, "chrom"]))){
+    #locusByChrom <- locus[[chrom]]    
     junk <- apply(spans[spans[, "chrom"] == chrom, , drop = FALSE], 1,
-                  getMCR4Locus, chromosome = chrom) 
+                  getMCR4Locus, chromosome = chrom)
   }
   colnames(mcrs) <- c("chromosome", "locus", "status", "loc.start",
                       "loc.end", "mcr", "mcr.start", "mcr.end", "samples",

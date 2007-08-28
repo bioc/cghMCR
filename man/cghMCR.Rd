@@ -7,7 +7,8 @@
 }
 \usage{
 cghMCR(segments, gapAllowed = 500, alteredLow = 0.03, alteredHigh =
-0.97, spanLimit = 2e+07, recurrence = 75)
+0.97, spanLimit = 2e+07, recurrence = 75, thresholdType = c("quantile",
+"value")) 
 }
 \arguments{
   \item{segments}{\code{segments} is a data frame extracted from the
@@ -29,6 +30,9 @@ cghMCR(segments, gapAllowed = 500, alteredLow = 0.03, alteredHigh =
   \item{spanLimit} {\code{spanLimit} is an integer that defines the
     leangh of altered spans that can be considered as locus. It is not
     of any use at this time}
+  \item{thresholdType}{\code{thresholdType} is a character string that
+    can be either "quantile" or "value" indicating wether
+    \code{alteredLow} or \code{alteredHigh} is quantial or actual value}
 }
 \details{
   The function is just a constructor of the \code{\link{cghMCR}} class

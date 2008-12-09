@@ -27,7 +27,7 @@ cghMCR(segments, gapAllowed = 500, alteredLow = 0.03, alteredHigh =
     that specifies the rate of occurrence for a gain or loss that are
     observed across sample. Only gains/losses with ocurrence rate grater
     than the threshold values are declared as MCRs}
-  \item{spanLimit} {\code{spanLimit} is an integer that defines the
+  \item{spanLimit}{\code{spanLimit} is an integer that defines the
     leangh of altered spans that can be considered as locus. It is not
     of any use at this time}
   \item{thresholdType}{\code{thresholdType} is a character string that

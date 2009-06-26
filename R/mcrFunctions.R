@@ -535,8 +535,8 @@ cghMCR <- function(segments, gapAllowed = 500, alteredLow = 0.03,
 
   thresholdType <- match.arg(thresholdType)
   
-  return(new("cghMCR", DNASeg = segments[["output"]], gapAllowed = gapAllowed,
-             DNAData = segments[["data"]], alteredLow = alteredLow,
+  return(new("cghMCR", DNASeg = as.data.frame(segments[["output"]]), gapAllowed = gapAllowed,
+             DNAData = as.data.frame(segments[["data"]]), alteredLow = alteredLow,
              alteredHigh = alteredHigh, spanLimit = spanLimit, 
              recurrence = recurrence, thresholdType = thresholdType))
 }
@@ -564,3 +564,212 @@ showSegment <- function(dataMat, chromosome, start, end, samples = NA,
   
   return(invisible())
 }
+
+
+
+# Methods for SGOL
+SGOL <- function(rsObj, threshold, method){
+   if(segBy(rsObj) == "region"){
+     sampleStart = 4
+   }else if(segBy(rsObj) == "gene"){
+     sampleStart = 5
+   }else{
+     stop("No applicable to sample pairs")
+   }
+   return(new("SGOL", gol = getSGOL(rs(rsObj), threshold = threshold,
+                        method = method, sampleStart = sampleStart),
+              threshold = threshold, method = method))
+}
+
+
+getSGOL <- function(rsData, threshold, method, sampleStart){
+    gains <- apply(rsData[, sampleStart:ncol(rsData)], 
+        1, FUN = function(x) method(as.numeric(x[as.numeric(x) >
+             threshold[2]]), na.rm = TRUE))
+    losses <- apply(rsData[, sampleStart:ncol(rsData)], 
+        1, FUN = function(x) method(as.numeric(x[as.numeric(x) <
+             threshold[1]]), na.rm = TRUE))
+
+    return(cbind(rsData[, 1:(sampleStart - 1)], gains = gains, 
+        losses = losses))
+}
+
+
+plotSGOL <- function(gol, XY, chrom = "chrom", 
+    start = "start", end = "end"){
+    merged <- sortByChromNLoc(mergeStartNEnd(mergeChrom(gol, chrom = chrom, 
+       start = start, end = end), chrom = chrom, start = start,
+       end = end), by1 = "chrom", by2 = "pos")
+    if(!missing(XY)){
+        if (XY == FALSE){
+            merged <- merged[which(!merged[, "chrom"] %in% c("X", "Y")), ]
+        }
+    }
+    ylim <- range(c(as.numeric(merged[, "gains"]), 
+        as.numeric(merged[, "losses"])), na.rm = TRUE)
+    xlim = range(as.numeric(merged[, "pos"]))
+    ylim <- c(floor(ylim[1] + ylim[1]/10), ceiling(ylim[2] + ylim[2]/10)) 
+    plot(0, 0, type = "n", ylim = ylim, ylab = "SGOL score",
+         xlab = "Chromosome", xlim = xlim, axes = FALSE)
+    markChrom(merged[!duplicated(merged[, chrom]), "pos"], ylim[1],
+                   ylim[2])
+    lines(merged[, "pos"], merged[, "gains"], type = "l", col = "green")
+    lines(merged[, "pos"], merged[, "losses"], type = "l", col = "red")
+    margins <- c(merged[!duplicated(merged[, chrom]), "pos"], 
+                 max(as.numeric(merged[, "pos"]), na.rm = TRUE))
+    margins <- cbind(margins[-length(margins)], margins[-1])
+ 
+    axis(2)
+    mean <- as.numeric(margins[, 1]) + (as.numeric(margins[, 2]) -
+                                        as.numeric(margins[, 1]))/2
+    axis(1, at = mean, 
+        labels = merged[!duplicated(merged[, chrom]), "chrom"])
+    box()
+    
+}
+
+
+markChrom <- function(adjustments, min, max){
+  for(index in 1:length(adjustments)){
+    if(index %% 2 == 1){
+      polygon(c(adjustments[index], adjustments[index + 1],
+                adjustments[index + 1], adjustments[index]),
+              c(min, min, max, max), col = "gray94", border = "white")
+    }
+  }
+  return(invisible())
+}
+
+
+getGEOI <- function(gol){
+    splited <- split.data.frame(gol, factor(gol[, "chrom"]))
+    
+    gains <- lapply(splited, mergeGOL, isGain = TRUE)
+    gains <- do.call("rbind", args = gains)
+    losses  <- lapply(splited, mergeGOL, isGain = FALSE)
+    losses <- do.call("rbind", args = losses)
+
+    return(list(gain = gains, loss = losses))
+}
+
+mergeGOL <- function(gol, isGain){
+    gol <- gol[order(as.numeric(gol[, "start"]), decreasing = FALSE), ]
+    start <- 1
+    merged <- NULL
+    if(isGain){
+        checkMe <- gol[1, "gains"]
+    }else{
+        checkMe <- gol[1, "losses"]
+    } 
+    for(index in 1:nrow(gol)){
+        if(isGain){
+            temp <- gol[index, "gains"]
+        }else{
+            temp <- gol[index, "losses"]
+        }
+        if(is.na(temp)){
+            if(checkMe != "NA"){
+                merged <- rbind(merged, c(chrom = gol[start, "chrom"], 
+                start = min(as.numeric(gol[start:(index-1), "start"])),
+                end = max(as.numeric(gol[start:(index - 1), "end"])),
+                sgol = checkMe, geneID = paste(gol[start:(index - 1), 
+                "geneid"], sep = "", collapse = ";"), 
+                geneNum = length(start:(index-1))))
+            }
+            checkMe <- "NA"
+            start <- index
+            next()
+        }
+        if(temp == checkMe){
+            next()
+        }else{
+            merged <- rbind(merged, c(chrom = gol[start, "chrom"], 
+                start = min(as.numeric(gol[start:(index-1), "start"])),
+                end = max(as.numeric(gol[start:(index - 1), "end"])),
+                sgol = checkMe, geneID = paste(gol[start:(index - 1), 
+                "geneid"], sep = "", collapse = ";"), 
+                geneNum = length(start:(index-1))))
+            checkMe <- temp
+            start <- index
+        } 
+    }
+    
+    return(merged)
+}
+
+mergeStartNEnd <- function(mergeMe, chrom = "chrom", start = "start", 
+    end = "end"){
+    st <- mergeMe[, -which(colnames(mergeMe) == end)]
+    ed <- mergeMe[, -which(colnames(mergeMe) == start)]
+    stNames <- colnames(st)
+    edNames <- colnames(ed)
+    stNames[which(stNames == start)] <- "pos"
+    edNames[which(edNames == end)] <- "pos"
+    colnames(st) <- stNames
+    colnames(ed) <- edNames
+    merged <- rbind(st, ed[, colnames(st)])
+
+    return(sortByChromNLoc(merged, by1 = "chrom", by2 = "pos"))
+}
+
+
+mergeChrom <- function(mergeMe, chrom = "chrom", 
+     start = "start", end = "end"){
+
+    mergeMe <- sortByChromNLoc(mergeMe, by1 = chrom, by2 = start)
+    chromSum <- getChromMargin(getChromLength(mergeMe[, 
+        c(chrom, start, end)], pos = "end"))
+    
+    for(ch in names(chromSum)){
+        mergeMe[which(mergeMe[, chrom] == ch), start] <-
+            (as.numeric(mergeMe[which(mergeMe[, chrom] == ch), start])
+            + chromSum[ch])
+        mergeMe[which(mergeMe[, chrom] == ch), end] <- 
+            (as.numeric(mergeMe[which(mergeMe[, chrom] == ch), end])
+            + chromSum[ch])
+    }
+
+    return(mergeMe)
+}
+
+getChromMargin <- function(chromLengh){
+    chromLength <- chromLengh[c(1:22, c("X", "Y"))]
+    chromLength <- chromLength[!is.na(chromLength)]
+    margins <- cumsum(chromLength)
+    chroms <- names(margins)[-1]
+    margins <- margins[-length(margins)]
+    names(margins) <- chroms
+
+    return(margins)
+}
+
+getChromLength <- function(segList, by = "chrom", pos = "loc.end"){
+  splited <- split.data.frame(segList, factor(segList[, by]))
+  chroms <- c(1:22, "X", "Y")
+  temp <- sapply(splited, FUN = function(x) max(as.numeric(as.vector(x[,
+                           pos]))))
+
+  return(temp[chroms[which(chroms %in% names(temp))]])
+}
+
+
+# Sort mapped in order by chromsome and then by location
+# A data frame or matrix to be sorted by columns defined by by1 and by2
+sortByChromNLoc <- function(sortMe, by1 = "Ch", by2 = "Pos"){
+  splited <- split.data.frame(sortMe, factor(sortMe[, by1]))
+  sorted <- NULL
+  for(chrom in c(1:22, "X", "Y")){
+    if(!is.null(splited[[chrom]])){
+      sorted <- rbind(sorted,
+              splited[[chrom]][order(as.numeric(splited[[chrom]][, by2])), ])
+    }
+  }
+
+  return(sorted)
+}
+
+
+
+
+
+

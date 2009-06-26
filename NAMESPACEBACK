@@ -1,2 +1,3 @@
-export(cghMCR, plot.DNAcopy, getSegments)
-exportClass(cghMCR)
+importFrom("graphics", "plot")
+exportMethods(cghMCR, getSegments, SGOL, gol)
+exportClasses(cghMCR)

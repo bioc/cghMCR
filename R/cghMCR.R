@@ -158,3 +158,75 @@ setMethod("getSegments", "marrayRaw",
 setMethod("getSegments", "marrayNorm",
           function(object) getSegData(object))
 
+
+# Class and methods for Segment Gain Or Loss
+setClass("SGOL", representation(gol = "data.frame",
+                                threshold = "vector",
+                                method = "function"))
+
+setGeneric("gol",
+           function(object) standardGeneric("gol"))
+setMethod("gol", "SGOL",
+          function(object) object@gol)
+setGeneric("gol<-", function(object, value)
+           standardGeneric("gol<-"))
+setReplaceMethod("gol", "SGOL", function(object, value){
+  object@gol <- value; object})
+
+setGeneric("threshold",
+           function(object) standardGeneric("threshold"))
+setMethod("threshold", "SGOL",
+          function(object) object@threshold)
+setGeneric("method",
+           function(object) standardGeneric("method"))
+setMethod("method", "SGOL",
+          function(object) object@method)
+          
+setMethod("[", "SGOL", function(x, i, j, ..., drop = FALSE) {
+    if (missing(drop)) drop <- FALSE
+    if (missing(i) && missing(j)) {
+        if (length(list(...))!=0)
+            stop("specify genes or SGOL scores to subset")
+          return(x)
+    }
+    if (!missing(j) && !missing(i)){
+        gol(x) <- gol(x)[i, j, ..., drop = drop]
+    }else{
+        if (!missing(i)){
+            gol(x) <- gol(x)[i,, ..., drop=drop]
+        }else{
+            gol(x) <- gol(x)[, j, ..., drop = drop]
+        }
+    }    
+    return(x)
+})
+
+setMethod("colnames", "SGOL",
+          function(x, do.NULL = TRUE, prefix = "col"){
+              colnames(col(x), do.NULL = do.NULL, prefix = prefix)
+})
+
+setMethod("rownames", "SGOL",
+          function(x, do.NULL = TRUE, prefix = "row"){
+              rownames(col(x), do.NULL = do.NULL, prefix = prefix)
+})
+         
+
+setMethod("plot", "SGOL",
+          function(x, y, ...){
+            if(!missing(y)) {
+                if(is.logical(y)){
+                    plotSGOL(gol(x), XY = y)
+                }else{
+                    plotSGOL(gol(x))
+                }
+            }else{
+                plotSGOL(gol(x))
+            }
+})
+
+setGeneric("GEOI",
+           function(object) standardGeneric("method"))
+setMethod("GEOI", "SGOL",
+          function(object) getGEOI(gol(object)))
+

@@ -597,6 +597,7 @@ getSGOL <- function(rsData, threshold, method, sampleStart){
 
 plotSGOL <- function(gol, XY, chrom = "chrom", 
     start = "start", end = "end"){
+    gol <- as.matrix(gol)
     merged <- sortByChromNLoc(mergeStartNEnd(mergeChrom(gol, chrom = chrom, 
        start = start, end = end), chrom = chrom, start = start,
        end = end), by1 = "chrom", by2 = "pos")
@@ -607,7 +608,7 @@ plotSGOL <- function(gol, XY, chrom = "chrom",
     }
     ylim <- range(c(as.numeric(merged[, "gains"]), 
         as.numeric(merged[, "losses"])), na.rm = TRUE)
-    xlim = range(as.numeric(merged[, "pos"]))
+    xlim = range(as.numeric(merged[, "pos"]), na.rm = TRUE)
     ylim <- c(floor(ylim[1] + ylim[1]/10), ceiling(ylim[2] + ylim[2]/10)) 
     plot(0, 0, type = "n", ylim = ylim, ylab = "SGOL score",
          xlab = "Chromosome", xlim = xlim, axes = FALSE)
@@ -761,7 +762,7 @@ sortByChromNLoc <- function(sortMe, by1 = "Ch", by2 = "Pos"){
   for(chrom in c(1:22, "X", "Y")){
     if(!is.null(splited[[chrom]])){
       sorted <- rbind(sorted,
-              splited[[chrom]][order(as.numeric(splited[[chrom]][, by2])), ])
+              splited[[chrom]][order(as.numeric(gsub(" ", "", splited[[chrom]][, by2]))), ])
     }
   }
 

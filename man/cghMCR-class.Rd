@@ -58,10 +58,10 @@
   \code{\link{cghMCR}}
 }
 \examples{
-  require("cghMCR")
+  require("CNTools")
   data("sampleData")
-  segments <- getSegments(sampleData)
-  cghmcr <- cghMCR(segments, gapAllowed = 500, alteredLow = 0.20,
-                   alteredHigh = 0.80, recurrence = 50)
+  cghmcr <- cghMCR(sampleData[sampleData[, "ID"] \%in\%
+         sample(unique(sampleData[, "ID"]), 20), ], gapAllowed = 500,
+         alteredLow = 0.20, alteredHigh = 0.80, recurrence = 50)
 }
 \keyword{classes}

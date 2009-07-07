@@ -502,31 +502,52 @@ adjustSegments <- function(segdata, adjustments){
 
   
 getSegData <- function(arrayRaw){
-  filter <- getProbeFilter(arrayRaw)
-  log2Ratio <- maM(arrayRaw)[filter, ]
+  #filter <- getProbeFilter(arrayRaw)
+  #log2Ratio <- maM(arrayRaw)[filter, ]
   
-  chrom <- gsub("chr([0-9XY]+):.*", "\\1", maInfo(maGnames(
-                               arrayRaw))["SystematicName"][filter, 1])
-  pos <- gsub("chr.*-([0-9]+)", "\\1", maInfo(maGnames(
-                     arrayRaw))["SystematicName"][filter, 1])
-  probes <- maInfo(maGnames(arrayRaw))["ProbeName"][filter, 1]
-  CNA.object <- CNA(matrix(as.numeric(log2Ratio),
-                    ncol = ncol(log2Ratio), byrow = FALSE), chrom,
-                    as.numeric(pos), data.type = "logratio",
-                    sampleid = colnames(log2Ratio))
-  segdata <- segment(smooth.CNA(CNA.object))
+  #chrom <- gsub("chr([0-9XY]+):.*", "\\1", maInfo(maGnames(
+  #                             arrayRaw))["SystematicName"][filter, 1])
+  #pos <- gsub("chr.*-([0-9]+)", "\\1", maInfo(maGnames(
+  #                   arrayRaw))["SystematicName"][filter, 1])
+  #probes <- maInfo(maGnames(arrayRaw))["ProbeName"][filter, 1]
+
+  rawData <- read.maimages(arrayRaw, source = "agilent", columns = 
+    list(R = "rMedianSignal", G = "gMedianSignal", Rb = "rBGMedianSignal", 
+    Gb = "gBGMedianSignal"), annotation = c("ControlType", 
+    "ProbeName", "GeneName", "SystematicName", 
+    "gIsFeatNonUnifOL", "rIsFeatNonUnifOL", "gIsBGNonUnifOL", "rIsBGNonUnifOL",
+    "gIsFeatPopnOL", "rIsFeatPopnOL", "gIsBGPopnOL", "rIsBGPopnOL", 
+    "rIsSaturated", "gIsSaturated"), names = basename(arrayRaw))
+  ma <- normalizeWithinArrays(backgroundCorrect(rawData, method = "minimum"), method = "loess")
+  probes <- ma$genes[, "ProbeName"]
+  chrom <- gsub("chr([0-9XY]+):.*", "\\1", ma$genes[, "SystematicName"])
+  dropMe <- c(which(!chrom %in% c(1:22, "X", "Y")), which(ma$genes[, "ControlType"] != 0))
+  require(DNAcopy, quietly = TRUE)
+  set.seed(25)
+  cna <- CNA(ma$M[-dropMe, ], 
+    gsub("chr([0-9XY]+):.*", "\\1", ma$genes[-dropMe, "SystematicName"]),
+    as.numeric(gsub(".*:([0-9]+)-.*", "\\1", 
+      ma$genes[-dropMe, "SystematicName"])),
+    data.type = "logratio", sampleid = colnames(ma$M)) 
+  segdata <- segment(smooth.CNA(cna)) 
+
+  #CNA.object <- CNA(matrix(as.numeric(log2Ratio),
+  #                  ncol = ncol(log2Ratio), byrow = FALSE), chrom,
+  #                  as.numeric(pos), data.type = "logratio",
+  #                  sampleid = colnames(log2Ratio))
+  #segdata <- segment(smooth.CNA(CNA.object))
   segdata[["data"]] <- cbind(probe = probes, as.data.frame(segdata[["data"]]))
 
   return(segdata)
 }
 
-getProbeFilter <- function(arrayRaw){
-  chrom <- gsub("chr([0-9XY]+):.*", "\\1", 
-                          maInfo(maGnames(arrayRaw))["SystematicName"][, 1])
+#getProbeFilter <- function(arrayRaw){
+#  chrom <- gsub("chr([0-9XY]+):.*", "\\1", 
+#                          maInfo(maGnames(arrayRaw))["SystematicName"][, 1])
   
-  return(intersect(which(chrom %in% c(1:22, "X", "Y")), which(maInfo(
-                   maGnames(arrayRaw))["ControlType"] >= 0)))
-}
+#  return(intersect(which(chrom %in% c(1:22, "X", "Y")), which(maInfo(
+#                   maGnames(arrayRaw))["ControlType"] >= 0)))
+#}
 
 
 cghMCR <- function(segments, gapAllowed = 500, alteredLow = 0.03,

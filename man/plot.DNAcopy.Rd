@@ -42,9 +42,8 @@ plot.DNAcopy(x, ..., save = FALSE, layout)
 \examples{
   if(interactive()){
     require("cghMCR")
-    data("sampleData")
-    segments <- getSegments(sampleData)
-    plot(segments)
+    data("segData")
+    plot(segData)
   }
 }
 \keyword{hplot}

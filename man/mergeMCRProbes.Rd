@@ -31,12 +31,10 @@ mergeMCRProbes(mcr, rawData)
   Science of Dana-Farber Cancer Institute}
 \seealso{\code{\link{MCR}}}
 \examples{
-  require("cghMCR")
-  data("sampleData")
-  segments <- getSegments(sampleData)
-  cghmcr <- cghMCR(segments, gapAllowed = 500, alteredLow = 0.20,
+  data("segData")
+  cghmcr <- cghMCR(segData, gapAllowed = 500, alteredLow = 0.20,
                    alteredHigh = 0.80, recurrence = 50)
   mcrs <- MCR(cghmcr)
-  mcrs <- mergeMCRProbes(mcrs, segments[["data"]])
+  mcrs <- mergeMCRProbes(mcrs, segData[["data"]])
 }
 \keyword{manip}

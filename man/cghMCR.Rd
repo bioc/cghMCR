@@ -1,6 +1,6 @@
 \name{cghMCR}
 \alias{cghMCR}
-\alias{sampleData}
+\alias{segData}
 \title{The constructor for the cghMCR class}
 \description{
   Instantiates a cghMCR object using the parameters passed.
@@ -47,10 +47,8 @@ cghMCR(segments, gapAllowed = 500, alteredLow = 0.03, alteredHigh =
   Science of Dana-Farber Cancer Institute}
 \seealso{\code{\link{cghMCR}}}
 \examples{
-  require("cghMCR")
-  data("sampleData")
-  segments <- getSegments(sampleData)
-  cghmcr <- cghMCR(segments, gapAllowed = 500, alteredLow = 0.20,
-                   alteredHigh = 0.80, recurrence = 50)
+  data("segData")
+  cghmcr <- cghMCR(segData, gapAllowed = 500,
+         alteredLow = 0.20, alteredHigh = 0.80, recurrence = 50)
 }
 \keyword{methods}

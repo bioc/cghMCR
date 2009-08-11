@@ -593,7 +593,7 @@ SGOL <- function(rsObj, threshold, method){
    if(segBy(rsObj) == "region"){
      sampleStart = 4
    }else if(segBy(rsObj) == "gene"){
-     sampleStart = 5
+     sampleStart = 6
    }else{
      stop("No applicable to sample pairs")
    }

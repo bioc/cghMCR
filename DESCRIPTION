@@ -1,13 +1,11 @@
 Package: cghMCR
-Version: 1.2.3
+Version: 1.2.4
 Title: Find chromosome regions showing common gains/losses
 Author: J. Zhang and B. Feng
 Maintainer: J. Zhang <jzhang@jimmy.harvard.edu>
 Depends: methods, DNAcopy, CNTools, limma
-Description: Based on the algothrim proposed by Dr. Lynda Chin's lab, this
-  package provides functions that identify chromosome regions that show 
-  gains/losses commonly observed across different samples profiled using
-  arrayCGH platform. 
+Description: This package provides functions to identify genomic regions of 
+  interests based on segmented copy number data from multiple samples.
 Keyword: arrayCGH
 biocViews: Platform, Microarray
 License: LGPL

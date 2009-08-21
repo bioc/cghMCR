@@ -106,6 +106,7 @@ The segment list shown above is a data frame but can not be used directly for co
 
 <<>>=
 data(geneInfo)
+data(sampleData, package = "CNTools")
 set.seed(1234)
 convertedData <- getRS(CNSeg(sampleData[which(is.element(sampleData[, "ID"], sample(unique(sampleData[, "ID"]), 20))), ]), by = "gene", input = FALSE, 
 XY = FALSE, geneMap = geneInfo)

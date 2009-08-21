@@ -150,13 +150,13 @@ setReplaceMethod("spans", "cghMCR", function(object, value){
 
 
 # A method for segmenting arrayCGH data added for marrayRaw
-setGeneric("getSegments",
-           function(object) standardGeneric("getSegments"))
-setMethod("getSegments", "marrayRaw",
-          function(object) getSegData(object))
+#setGeneric("getSegments",
+#           function(object) standardGeneric("getSegments"))
+#setMethod("getSegments", "marrayRaw",
+#          function(object) getSegData(object))
 
-setMethod("getSegments", "marrayNorm",
-          function(object) getSegData(object))
+#setMethod("getSegments", "marrayNorm",
+#          function(object) getSegData(object))
 
 
 # Class and methods for Segment Gain Or Loss
@@ -226,7 +226,7 @@ setMethod("plot", "SGOL",
 })
 
 setGeneric("GEOI",
-           function(object) standardGeneric("method"))
+           function(object) standardGeneric("GEOI"))
 setMethod("GEOI", "SGOL",
           function(object) getGEOI(gol(object)))
 

@@ -597,8 +597,9 @@ SGOL <- function(rsObj, threshold, method){
    }else{
      stop("No applicable to sample pairs")
    }
-   return(new("SGOL", gol = getSGOL(rs(rsObj), threshold = threshold,
-                        method = method, sampleStart = sampleStart),
+   return(new("SGOL", gol = getSGOL(as.data.frame(rs(rsObj)), 
+              threshold = threshold,
+              method = method, sampleStart = sampleStart),
               threshold = threshold, method = method))
 }
 

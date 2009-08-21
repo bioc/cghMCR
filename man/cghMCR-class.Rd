@@ -19,8 +19,11 @@
 }
 \section{Slots}{\describe{
   \item{\code{DNASeg}:}{Object of class \code{"data.frame"} containing
-    segmentation data derived from segmentation analysis using segment
-    or \code{\link{getSegments}}}
+    segmentation data derived from segmentation analysis using segment}
+  \item{\code{DNAData}:}{Object of class \code{"data.frame"} containing
+    raw data derived used for the segmentation analysisfrom segmentation analysis}
+  \item{\code{altered}:}{Object of class \code{"data.frame"} containing
+    data for the altered regions}
   \item{\code{gapAllowed}:}{Object of class \code{gapAllowed} is an
     integer specifying low threshold of base pair number to separate two
     adjacent segments, belower which the two segments will be joined as
@@ -40,6 +43,7 @@
   \item{\code{spanLimit}:}{Object of class \code{spanLimit} is an
     integer that defines the leangh of altered spans that can be
     considered as locus. It is not of any use at this time}
+  \item{\code{thresholdType}:}{A character string that can be either "quantile", "value" to indicate the type of the value for recurrence}
   }
 }
 

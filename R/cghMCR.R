@@ -7,7 +7,6 @@
 setClass("cghMCR", representation(DNASeg = "data.frame",
                                   DNAData = "data.frame",
                                   altered = "data.frame",
-                                  spans = "data.frame",
                                   gapAllowed = "numeric",
                                   spanLimit = "numeric",
                                   alteredLow = "numeric",

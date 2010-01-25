@@ -133,9 +133,9 @@ plot(SGOLScores)
 Based on the SGOL scores, genes in regions of gains or losses can be obtained by a set of thresholds, say -20 and 20.
 
 <<>>=
-GOIGains <- SGOLScores[which(as.numeric(unlist(gol(SGOLScores[, ]))) > 
+GOIGains <- SGOLScores[which(as.numeric(unlist(gol(SGOLScores[, "gains"]))) > 
      20), "gains"]
-GOILosses <- SGOLScores[which(as.numeric(unlist(gol(SGOLScores[, ]))) < 
+GOILosses <- SGOLScores[which(as.numeric(unlist(gol(SGOLScores[, "losses"]))) < 
      -20), "losses"]
 head(gol(GOIGains))
 @

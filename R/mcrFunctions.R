@@ -622,10 +622,10 @@ plotSGOL <- function(gol, XY, chrom = "chrom",
     gol <- as.matrix(gol)
     merged <- sortByChromNLoc(mergeStartNEnd(mergeChrom(gol, chrom = chrom, 
        start = start, end = end), chrom = chrom, start = start,
-       end = end), by1 = "chrom", by2 = "pos")
+       end = end), by1 = chrom, by2 = "pos")
     if(!missing(XY)){
         if (XY == FALSE){
-            merged <- merged[which(!merged[, "chrom"] %in% c("X", "Y")), ]
+            merged <- merged[which(!merged[, chrom] %in% c("X", "Y")), ]
         }
     }
     ylim <- range(c(as.numeric(merged[, "gains"]), 
@@ -732,7 +732,7 @@ mergeStartNEnd <- function(mergeMe, chrom = "chrom", start = "start",
     colnames(ed) <- edNames
     merged <- rbind(st, ed[, colnames(st)])
 
-    return(sortByChromNLoc(merged, by1 = "chrom", by2 = "pos"))
+    return(sortByChromNLoc(merged, by1 = chrom, by2 = "pos"))
 }
 
 
@@ -741,7 +741,7 @@ mergeChrom <- function(mergeMe, chrom = "chrom",
 
     mergeMe <- sortByChromNLoc(mergeMe, by1 = chrom, by2 = start)
     chromSum <- getChromMargin(getChromLength(mergeMe[, 
-        c(chrom, start, end)], pos = "end"))
+        c(chrom, start, end)], by = chrom, pos = end))
     
     for(ch in names(chromSum)){
         mergeMe[which(mergeMe[, chrom] == ch), start] <-
@@ -791,8 +791,54 @@ sortByChromNLoc <- function(sortMe, by1 = "Ch", by2 = "Pos"){
   return(sorted)
 }
 
+### Drops CNPs of the tumor SGOL objects
+### threshold - a numeric vector of two with the first one for losses
+###    and second one for gains
+dropCNP <- function(normalsgol, tumorsgol, threshold){
+    ngol <- gol(normalsgol)
+    tgol <- gol(tumorsgol)
+
+    gainGeneID <- as.vector(ngol[which(as.numeric(as.vector(ngol[, "gains"])) > 
+        threshold[2]), "geneid"])
+    lossGeneID <- as.vector(ngol[which(as.numeric(as.vector(ngol[, "losses"])) < 
+        threshold[1]), "geneid"])
+    tumorsgol@gol <- dropGenes(gainGeneID, lossGeneID, tgol)
+    
+    return(tumorsgol)
+}
+
+dropGenes <- function(gainGeneID, lossGeneID, sgol){
+  
+    imputMe <- which(sgol[, "geneid"] %in% gainGeneID)
+    sgol[imputMe, "gains"] <- NA
+    sgol[imputMe, "gains"] <- approx(sgol[, "gains"], xout = imputMe)$y
+    
+    imputMe <- which(sgol[, "geneid"] %in% lossGeneID)
+    sgol[imputMe, "losses"] <- NA
+    sgol[imputMe, "losses"] <- approx(sgol[, "losses"], xout = imputMe)$y
+
+    return(sgol)
+}
 
 
+
+topGenes <- function(sgol, quan = c(0.02, 0.98), XY = FALSE){
+
+    gol <- sgol
+    if(!XY){
+        gol <- gol[!gol[, "chrom"] %in% c("X", "Y"), ]
+    }
+   
+    gains <- gol[as.numeric(gol[, "gains"]) > 
+        quantile(as.numeric(gol[, "gains"]), quan[2], 
+        na.rm = TRUE), ]
+    losses <- gol[which(as.numeric(gol[, "losses"]) < 
+        quantile(as.numeric(gol[, "losses"]), quan[1], 
+        na.rm = TRUE)), ]
+        
+    return(list(gain = gains[order(as.numeric(gains[, "gains"]), decreasing = TRUE), ], 
+        loss = losses[order(as.numeric(losses[, "losses"]), decreasing = FALSE), ])) 
+}
 
 
 

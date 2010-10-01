@@ -109,7 +109,7 @@ data(geneInfo)
 data(sampleData, package = "CNTools")
 set.seed(1234)
 convertedData <- getRS(CNSeg(sampleData[which(is.element(sampleData[, "ID"], sample(unique(sampleData[, "ID"]), 20))), ]), by = "gene", imput = FALSE, 
-XY = FALSE, geneMap = geneInfo)
+XY = FALSE, geneMap = geneInfo, what = "median")
 @ 
 
 Once we have the segment data converted into a matrix format, we can try to identify regions showing gains or losses that are common across samples. The \textit{imput} parameter indicates whether cells with missing values will be imputed and the \textit{parameter} indicates whether regions on the X and Y chromosome should be kept. Since our samples are a mixture of male and female DNAs profiled against pooled male human DNA, we choose to drop the data on X and Y chromosomes. Parameter \textit{geneMap} is needed when samples will be aligned by genes. The \Rpackage{CNTools} contains a built human gene information data set (geneInfo) that was used in the code above. Users working on other organisms or their own gene mapping information need to create a gene mapping data set following the same format as \textit{geneInfo} shown below:

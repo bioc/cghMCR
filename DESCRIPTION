@@ -7,7 +7,7 @@ Depends: methods, DNAcopy, CNTools, limma
 Description: This package provides functions to identify genomic regions of 
   interests based on segmented copy number data from multiple samples.
 Keyword: arrayCGH
-biocViews: Platform, Microarray, CopyNumberVariants
+biocViews: Microarray, CopyNumberVariants
 License: LGPL
 ZipData: yes
 LazyLoad: yes

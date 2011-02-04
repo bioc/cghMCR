@@ -9,5 +9,4 @@ Description: This package provides functions to identify genomic regions of
 Keyword: arrayCGH
 biocViews: Microarray, CopyNumberVariants
 License: LGPL
-ZipData: yes
 LazyLoad: yes

@@ -46,11 +46,9 @@ using a constructor SGOL.
 \references{The SGOL score is a modified version of the GISTIC score
   published in PNAS 104: 20007-20012}
 \author{Jianhua Zhang}
-\note{}
 
 \examples{
 showClass("SGOL")
 require(CNTools)
-
 }
 \keyword{classes}

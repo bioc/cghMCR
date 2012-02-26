@@ -53,7 +53,6 @@
       common regions of gains/losses across samples}
 	 }
 }
-\references{}
 \author{Jianhua Zhang}
 \note{The function is a contribution of The Center for Applied Cancer
   Science of Dana-Farber Cancer Institute}

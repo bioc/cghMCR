@@ -1,4 +1,4 @@
-importFrom("graphics", "plot")
+importFrom(BiocGenerics, plot, rownames, colnames)
 export(cghMCR, plot.DNAcopy, MCR, mergeMCRProbes, SGOL)
 exportClass(cghMCR, SGOL)
 exportMethods(gol, plot)

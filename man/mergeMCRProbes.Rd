@@ -25,7 +25,6 @@ mergeMCRProbes(mcr, rawData)
 \value{
   A data frame with MCRs and the corresponding probe ids and other data.
 }
-\references{}
 \author{Jianhua Zhang}
 \note{The function is a contribution of The Center for Applied Cancer
   Science of Dana-Farber Cancer Institute}

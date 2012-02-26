@@ -64,25 +64,25 @@ setGeneric("spans",
 setMethod("spans", "cghMCR",
           function(object) object@spans)
   
-setMethod("print", "cghMCR",
-          function(x, ...) {
+setMethod("show", "cghMCR",
+          function(object) {
             cat("Object of cghMCR\n")
             cat("DNASeg:\n")
-            cat(paste("\tRow = ", nrow(DNASeg(x)), "\n", sep = ""))
-            cat(paste("\tColumn = ", ncol(DNASeg(x)), "\n", sep = ""))
-            if(nrow(DNASeg(x)) <= 5){
-              rows <- nrow(DNASeg(x))
+            cat(paste("\tRow = ", nrow(DNASeg(object)), "\n", sep = ""))
+            cat(paste("\tColumn = ", ncol(DNASeg(object)), "\n", sep = ""))
+            if(nrow(DNASeg(object)) <= 5){
+              rows <- nrow(DNASeg(object))
             }else{
               rows <- 5
             }
-            cat(DNASeg(x)[1:rows, ])
-            if(nrow(DNASeg(x) > 5)){
+            cat(DNASeg(object)[1:rows, ])
+            if(nrow(DNASeg(object) > 5)){
               cat("\n ..........\n")
             }
             cat("Parameter settings:\n")
             for(fun in c("gapAllowed", "spanLimit", "alteredLow",
                          "alteredHigh", "recurrence")){ 
-              cat(paste("\t", fun, " = ", do.call(fun, args = list(x)),
+              cat(paste("\t", fun, " = ", do.call(fun, args = list(object)),
                         "\n", sep = ""))
             }
           })

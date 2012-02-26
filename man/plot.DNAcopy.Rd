@@ -8,7 +8,7 @@
   along with the segments identified. 
 }
 \usage{
-plot.DNAcopy(x, ..., save = FALSE, layout)
+\S3method{plot}{DNAcopy}(x, ..., save = FALSE, layout)
 }
 \arguments{
   \item{x}{\code{x} is a DNAcopy object

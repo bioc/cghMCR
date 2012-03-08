@@ -210,7 +210,7 @@ setMethod("rownames", "SGOL",
               rownames(col(x), do.NULL = do.NULL, prefix = prefix)
 })
          
-
+setGeneric("plot")
 setMethod("plot", "SGOL",
           function(x, y, ...){
             if(!missing(y)) {

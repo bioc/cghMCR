@@ -1,4 +1,5 @@
 importFrom(BiocGenerics, rownames, colnames)
 export(cghMCR, plot.DNAcopy, MCR, mergeMCRProbes, SGOL)
 exportClass(cghMCR, SGOL)
+importFrom(stats4, plot)
 exportMethods(gol, plot)

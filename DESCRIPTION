@@ -1,13 +1,14 @@
 Package: cghMCR
-Version: 1.21.1
+Version: 1.21.2
 Title: Find chromosome regions showing common gains/losses
 Author: J. Zhang and B. Feng
 Maintainer: J. Zhang <jzhang@jimmy.harvard.edu>
 Depends: methods, DNAcopy, CNTools, limma
 Imports: BiocGenerics (>= 0.1.6), stats4
-Description: This package provides functions to identify genomic regions of 
-  interests based on segmented copy number data from multiple samples.
+Description: This package provides functions to identify genomic
+        regions of interests based on segmented copy number data from
+        multiple samples.
 Keyword: arrayCGH
-biocViews: Microarray, CopyNumberVariants
 License: LGPL
 LazyLoad: yes
+biocViews: Microarray, CopyNumberVariation
